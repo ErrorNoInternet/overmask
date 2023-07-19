@@ -1,5 +1,5 @@
 use clap::Parser;
-use std::{fs, io::Error, os::unix::prelude::FileExt};
+use std::{fs, io::Error, os::unix::prelude::FileExt, process::exit};
 use vblk::{mount, BlockDevice};
 
 const BLOCK_SIZE: usize = 512;
@@ -10,17 +10,17 @@ struct Arguments {
     /// Original and unmodified data will be read
     /// from the read-only seed file.
     #[arg(short, long)]
-    seed: String,
+    seed_file: String,
 
     /// Any modifications will be written to and
     /// read from the overlay file.
     #[arg(short, long)]
-    overlay: String,
+    overlay_file: String,
 
     /// The mask file contains a mask of what areas
     /// have been modified.
     #[arg(short, long)]
-    mask: String,
+    mask_file: String,
 
     /// nbd device file (`modprobe nbd` to load module)
     #[arg(short, long, default_value = "/dev/nbd0")]
@@ -35,35 +35,71 @@ struct Arguments {
 fn main() {
     let arguments = Arguments::parse();
 
-    let seed_file = match fs::File::open(arguments.seed) {
+    let seed_file = match fs::File::open(&arguments.seed_file) {
         Ok(seed_file) => seed_file,
         Err(error) => {
             println!("unable to open seed file: {error}");
-            return;
+            exit(1);
         }
     };
     let overlay_file = match fs::File::options()
         .read(true)
         .write(true)
-        .open(arguments.overlay)
+        .open(&arguments.overlay_file)
     {
         Ok(overlay_file) => overlay_file,
         Err(error) => {
             println!("unable to open overlay file: {error}");
-            return;
+            exit(1);
         }
     };
     let mask_file = match fs::File::options()
         .read(true)
         .write(true)
-        .open(arguments.mask)
+        .open(&arguments.mask_file)
     {
         Ok(mask_file) => mask_file,
         Err(error) => {
             println!("unable to open mask file: {error}");
-            return;
+            exit(1);
         }
     };
+
+    let get_size = |path: String| -> u64 {
+        if match block_utils::is_disk(&path) {
+            Ok(is_block_device) => is_block_device,
+            Err(error) => {
+                println!("unable to query file type: {error}");
+                exit(1)
+            }
+        } {
+            match block_utils::get_device_info(path) {
+                Ok(device_info) => device_info.capacity,
+                Err(error) => {
+                    println!("unable to query block device: {error}");
+                    exit(1)
+                }
+            }
+        } else {
+            match fs::File::open(path) {
+                Ok(file) => match file.metadata() {
+                    Ok(metadata) => metadata.len(),
+                    Err(error) => {
+                        println!("unable to query file metadata: {error}");
+                        exit(1)
+                    }
+                },
+                Err(error) => {
+                    println!("unable to open file: {error}");
+                    exit(1)
+                }
+            }
+        }
+    };
+    let seed_file_size = get_size(arguments.seed_file);
+    let overlay_file_size = get_size(arguments.overlay_file);
+    let mask_file_size = get_size(arguments.mask_file);
+    println!("seed file: {seed_file_size} bytes, overlay file: {overlay_file_size} bytes, mask file: {mask_file_size}");
 
     if arguments.clean {
         let mut seed_buffer = vec![0; BLOCK_SIZE];
@@ -71,7 +107,7 @@ fn main() {
         let zeros = vec![0; BLOCK_SIZE];
         let mut blocks_freed = 0;
         let mut last_zero: (bool, u64) = (false, 0);
-        for block in 0..(seed_file.metadata().unwrap().len() / BLOCK_SIZE as u64) {
+        for block in 0..(seed_file_size / BLOCK_SIZE as u64) {
             let offset = block * BLOCK_SIZE as u64;
             match seed_file.read_at(&mut seed_buffer, offset) {
                 Ok(_) => (),
@@ -105,7 +141,7 @@ fn main() {
                 blocks_freed += 1;
             }
         }
-        for block in 0..(overlay_file.metadata().unwrap().len() / BLOCK_SIZE as u64) {
+        for block in 0..(overlay_file_size / BLOCK_SIZE as u64) {
             let offset = block * BLOCK_SIZE as u64;
             match overlay_file.read_at(&mut overlay_buffer, offset) {
                 Ok(_) => (),
@@ -123,9 +159,10 @@ fn main() {
             }
         }
         if last_zero.0 {
-            let original_size = overlay_file.metadata().unwrap().len();
             let truncated_size = last_zero.1 * BLOCK_SIZE as u64;
-            println!("truncating files from {original_size} bytes to {truncated_size} bytes...");
+            println!(
+                "truncating files from {overlay_file_size} bytes to {truncated_size} bytes..."
+            );
             match overlay_file.set_len(truncated_size) {
                 Ok(_) => (),
                 Err(error) => {
@@ -148,6 +185,7 @@ fn main() {
 
     struct VirtualBlockDevice {
         seed_file: fs::File,
+        seed_file_size: u64,
         overlay_file: fs::File,
         mask_file: fs::File,
     }
@@ -238,12 +276,13 @@ fn main() {
         }
 
         fn blocks(&self) -> u64 {
-            self.seed_file.metadata().unwrap().len() / BLOCK_SIZE as u64
+            self.seed_file_size / BLOCK_SIZE as u64
         }
     }
 
     let mut virtual_block_device = VirtualBlockDevice {
         seed_file,
+        seed_file_size,
         overlay_file,
         mask_file,
     };
@@ -251,10 +290,17 @@ fn main() {
         match mount(&mut virtual_block_device, &arguments.nbd_device, |device| {
             println!("opened virtual block device at {}", arguments.nbd_device);
 
-            ctrlc::set_handler(move || {
-                device.unmount().unwrap();
-            })
-            .unwrap();
+            match ctrlc::set_handler(move || match device.unmount() {
+                Ok(_) => (),
+                Err(error) => {
+                    println!("unable to unmount virtual block device: {error}")
+                }
+            }) {
+                Ok(_) => (),
+                Err(error) => {
+                    println!("unable to add ctrlc handler: {error}")
+                }
+            };
             Ok(())
         }) {
             Ok(_) => (),
