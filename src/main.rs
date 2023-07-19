@@ -1,5 +1,10 @@
 use clap::Parser;
-use std::{fs, io::Error, os::unix::prelude::FileExt, process::exit};
+use std::{
+    fs,
+    io::{Error, Write},
+    os::unix::prelude::FileExt,
+    process::exit,
+};
 use vblk::{mount, BlockDevice};
 
 const BLOCK_SIZE: usize = 512;
@@ -289,6 +294,19 @@ fn main() {
 
         fn flush(&mut self) -> Result<(), Error> {
             println!("flush()");
+
+            match self.overlay_file.flush() {
+                Ok(_) => (),
+                Err(error) => {
+                    println!("failed to flush overlay file: {error}")
+                }
+            }
+            match self.mask_file.flush() {
+                Ok(_) => (),
+                Err(error) => {
+                    println!("failed to flush mask file: {error}")
+                }
+            }
             Ok(())
         }
 
