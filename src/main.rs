@@ -9,7 +9,7 @@ use vblk::{mount, BlockDevice};
 
 const BLOCK_SIZE: usize = 512;
 
-#[derive(Parser, Debug)]
+#[derive(Debug, Clone, Parser)]
 #[command(author, version, about, long_about = None)]
 struct Arguments {
     /// Original and unmodified data will be read
@@ -39,6 +39,11 @@ struct Arguments {
     /// operation (read, write, flush, etc)
     #[arg(short, long, default_value_t = false)]
     print_operations: bool,
+
+    /// Whether or not to ignore read/write errors
+    /// from the seed, overlay, and mask files
+    #[arg(short, long, default_value_t = false)]
+    ignore_errors: bool,
 
     /// Removes contents that are the same in the
     /// seed file and overlay file
@@ -79,7 +84,7 @@ fn main() {
         }
     };
 
-    let get_size = |path: String| -> u64 {
+    let get_size = |path: &str| -> u64 {
         if match block_utils::is_block_device(&path) {
             Ok(is_block_device) => is_block_device,
             Err(_) => false,
@@ -107,9 +112,9 @@ fn main() {
             }
         }
     };
-    let seed_file_size = get_size(arguments.seed_file);
-    let overlay_file_size = get_size(arguments.overlay_file);
-    let mask_file_size = get_size(arguments.mask_file);
+    let seed_file_size = get_size(&arguments.seed_file);
+    let overlay_file_size = get_size(&arguments.overlay_file);
+    let mask_file_size = get_size(&arguments.mask_file);
     println!("seed file: {seed_file_size} bytes, overlay file: {overlay_file_size} bytes, mask file: {mask_file_size} bytes");
 
     if arguments.clean {
@@ -132,7 +137,11 @@ fn main() {
                 Ok(_) => (),
                 Err(error) => {
                     eprintln!("failed to read {BLOCK_SIZE} bytes from overlay file at offset {offset}: {error}");
-                    continue;
+                    if arguments.ignore_errors {
+                        continue;
+                    } else {
+                        exit(1)
+                    }
                 }
             }
             if !overlay_buffer.iter().all(|&byte| byte == 0) {
@@ -140,7 +149,11 @@ fn main() {
                     Ok(_) => (),
                     Err(error) => {
                         eprintln!("failed to read {BLOCK_SIZE} bytes from seed file at offset {offset}: {error}");
-                        continue;
+                        if arguments.ignore_errors {
+                            continue;
+                        } else {
+                            exit(1)
+                        }
                     }
                 }
                 if seed_buffer == overlay_buffer {
@@ -148,14 +161,22 @@ fn main() {
                         Ok(_) => (),
                         Err(error) => {
                             eprintln!("failed to write {BLOCK_SIZE} bytes to overlay file at offset {offset}: {error}");
-                            continue;
+                            if arguments.ignore_errors {
+                                continue;
+                            } else {
+                                exit(1)
+                            }
                         }
                     };
                     match mask_file.write_at(&zeros, offset) {
                         Ok(_) => (),
                         Err(error) => {
                             eprintln!("failed to write {BLOCK_SIZE} bytes to mask file at offset {offset}: {error}");
-                            continue;
+                            if arguments.ignore_errors {
+                                continue;
+                            } else {
+                                exit(1)
+                            }
                         }
                     };
                     blocks_freed += 1;
@@ -181,7 +202,11 @@ fn main() {
                 Ok(_) => (),
                 Err(error) => {
                     eprintln!("failed to read {BLOCK_SIZE} bytes from overlay file at offset {offset}: {error}");
-                    continue;
+                    if arguments.ignore_errors {
+                        continue;
+                    } else {
+                        exit(1)
+                    }
                 }
             }
             if overlay_buffer.iter().all(|&byte| byte == 0) {
@@ -205,13 +230,19 @@ fn main() {
             match overlay_file.set_len(truncated_size) {
                 Ok(_) => (),
                 Err(error) => {
-                    eprintln!("failed to set overlay file length to {truncated_size}: {error}")
+                    eprintln!("failed to set overlay file length to {truncated_size}: {error}");
+                    if !arguments.ignore_errors {
+                        exit(1)
+                    }
                 }
             };
             match mask_file.set_len(truncated_size) {
                 Ok(_) => (),
                 Err(error) => {
-                    eprintln!("failed to set mask file length to {truncated_size}: {error}")
+                    eprintln!("failed to set mask file length to {truncated_size}: {error}");
+                    if !arguments.ignore_errors {
+                        exit(1)
+                    }
                 }
             };
         }
@@ -223,7 +254,7 @@ fn main() {
         seed_file_size: u64,
         overlay_file: fs::File,
         mask_file: fs::File,
-        arguments: &Arguments,
+        arguments: Arguments,
     }
     impl BlockDevice for VirtualBlockDevice {
         fn read(&mut self, offset: u64, bytes: &mut [u8]) -> Result<(), Error> {
@@ -238,7 +269,10 @@ fn main() {
                     println!(
                         "failed to read {} bytes from seed file at offset {offset}: {error}",
                         bytes.len(),
-                    )
+                    );
+                    if !self.arguments.ignore_errors {
+                        exit(1)
+                    }
                 }
             }
             let mut mask_buffer = vec![0; bytes.len()];
@@ -248,7 +282,10 @@ fn main() {
                     println!(
                         "failed to read {} bytes from mask file at offset {offset}: {error}",
                         bytes.len(),
-                    )
+                    );
+                    if !self.arguments.ignore_errors {
+                        exit(1)
+                    }
                 }
             }
             if !mask_buffer.iter().all(|&byte| byte == 0) {
@@ -259,7 +296,10 @@ fn main() {
                         println!(
                             "failed to read {} bytes from overlay file at offset {offset}: {error}",
                             bytes.len(),
-                        )
+                        );
+                        if !self.arguments.ignore_errors {
+                            exit(1)
+                        }
                     }
                 }
 
@@ -286,7 +326,10 @@ fn main() {
                     println!(
                         "failed to write {} bytes to overlay file at offset {offset}: {error}",
                         bytes.len(),
-                    )
+                    );
+                    if !self.arguments.ignore_errors {
+                        exit(1)
+                    }
                 }
             }
             match self.mask_file.write_all_at(&vec![1; bytes.len()], offset) {
@@ -295,7 +338,10 @@ fn main() {
                     println!(
                         "failed to write {} bytes to mask file at offset {offset}: {error}",
                         bytes.len(),
-                    )
+                    );
+                    if !self.arguments.ignore_errors {
+                        exit(1)
+                    }
                 }
             };
 
@@ -310,13 +356,19 @@ fn main() {
             match self.overlay_file.flush() {
                 Ok(_) => (),
                 Err(error) => {
-                    eprintln!("failed to flush overlay file: {error}")
+                    eprintln!("failed to flush overlay file: {error}");
+                    if !self.arguments.ignore_errors {
+                        exit(1)
+                    }
                 }
             }
             match self.mask_file.flush() {
                 Ok(_) => (),
                 Err(error) => {
-                    eprintln!("failed to flush mask file: {error}")
+                    eprintln!("failed to flush mask file: {error}");
+                    if !self.arguments.ignore_errors {
+                        exit(1)
+                    }
                 }
             }
             Ok(())
@@ -342,7 +394,7 @@ fn main() {
         seed_file_size,
         overlay_file,
         mask_file,
-        arguments: &arguments,
+        arguments: arguments.clone(),
     };
     unsafe {
         match mount(&mut virtual_block_device, &arguments.nbd_device, |device| {
