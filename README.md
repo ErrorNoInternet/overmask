@@ -13,8 +13,8 @@ cargo install --path .
 # required for virtual block device (/dev/nbd*)
 sudo modprobe nbd
 
-# read from /dev/sda, but write any data to overlay_file and use
-# mask_file to keep track of what has been written
+# read from /dev/sda, but redirect all writes to overlay_file
+# and use mask_file to keep track of what has been written
 sudo overmask --seed /dev/sda --overlay overlay_file --mask mask_file
 
 # you can now run
