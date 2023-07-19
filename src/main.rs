@@ -27,7 +27,7 @@ struct Arguments {
     #[arg(short, long)]
     mask_file: String,
 
-    /// nbd device file (`modprobe nbd` to load module)
+    /// nbd device file (requires nbd kernel module)
     #[arg(short, long, default_value = "/dev/nbd0")]
     nbd_device: String,
 
@@ -266,7 +266,7 @@ fn main() {
             match self.seed_file.read_at(&mut buffer, offset) {
                 Ok(_) => (),
                 Err(error) => {
-                    println!(
+                    eprintln!(
                         "failed to read {} bytes from seed file at offset {offset}: {error}",
                         bytes.len(),
                     );
@@ -279,7 +279,7 @@ fn main() {
             match self.mask_file.read_at(&mut mask_buffer, offset) {
                 Ok(_) => (),
                 Err(error) => {
-                    println!(
+                    eprintln!(
                         "failed to read {} bytes from mask file at offset {offset}: {error}",
                         bytes.len(),
                     );
@@ -293,7 +293,7 @@ fn main() {
                 match self.overlay_file.read_at(&mut overlay_buffer, offset) {
                     Ok(_) => (),
                     Err(error) => {
-                        println!(
+                        eprintln!(
                             "failed to read {} bytes from overlay file at offset {offset}: {error}",
                             bytes.len(),
                         );
@@ -323,7 +323,7 @@ fn main() {
             match self.overlay_file.write_all_at(bytes, offset) {
                 Ok(_) => (),
                 Err(error) => {
-                    println!(
+                    eprintln!(
                         "failed to write {} bytes to overlay file at offset {offset}: {error}",
                         bytes.len(),
                     );
@@ -335,7 +335,7 @@ fn main() {
             match self.mask_file.write_all_at(&vec![1; bytes.len()], offset) {
                 Ok(_) => (),
                 Err(error) => {
-                    println!(
+                    eprintln!(
                         "failed to write {} bytes to mask file at offset {offset}: {error}",
                         bytes.len(),
                     );
@@ -398,11 +398,14 @@ fn main() {
     };
     unsafe {
         match mount(&mut virtual_block_device, &arguments.nbd_device, |device| {
-            println!("opened virtual block device at {}", arguments.nbd_device);
+            println!(
+                "successfully opened virtual block device at {}",
+                arguments.nbd_device
+            );
             match device.set_timeout(std::time::Duration::from_secs(arguments.nbd_timeout)) {
                 Ok(_) => (),
                 Err(error) => {
-                    println!(
+                    eprintln!(
                         "failed to set virtual block device timeout to {} seconds: {error}",
                         arguments.nbd_timeout
                     )
