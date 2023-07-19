@@ -10,14 +10,13 @@ struct Arguments {
     #[arg(short, long)]
     seed: String,
 
-    /// Any writes will be written to the overlay
-    /// file and read from the overlay file instead
-    /// of the seed file.
+    /// Any modifications will be written to and
+    /// read from the overlay file.
     #[arg(short, long)]
     overlay: String,
 
     /// The mask file contains a mask of what areas
-    /// have been changed in the overlay file.
+    /// have been modified.
     #[arg(short, long)]
     mask: String,
 }
