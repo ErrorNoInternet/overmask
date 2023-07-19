@@ -26,6 +26,10 @@ struct Arguments {
     #[arg(short, long, default_value = "/dev/nbd0")]
     nbd_device: String,
 
+    /// nbd timeout in seconds
+    #[arg(short = 't', long, default_value_t = 60)]
+    nbd_timeout: u64,
+
     /// Removes contents that are the same in the
     /// seed file and overlay file.
     #[arg(short, long, required = false)]
