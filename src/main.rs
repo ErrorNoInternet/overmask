@@ -22,11 +22,11 @@ struct Arguments {
     #[arg(short, long)]
     mask_file: String,
 
-    /// nbd device file (`modprobe nbd` to load module)
+    /// nbd device file (`modprobe nbd` to load module).
     #[arg(short, long, default_value = "/dev/nbd0")]
     nbd_device: String,
 
-    /// nbd timeout in seconds
+    /// nbd timeout in seconds.
     #[arg(short = 't', long, default_value_t = 60)]
     nbd_timeout: u64,
 
