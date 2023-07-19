@@ -66,12 +66,9 @@ fn main() {
     };
 
     let get_size = |path: String| -> u64 {
-        if match block_utils::is_disk(&path) {
+        if match block_utils::is_block_device(&path) {
             Ok(is_block_device) => is_block_device,
-            Err(error) => {
-                println!("unable to query file type: {error}");
-                exit(1)
-            }
+            Err(_) => false,
         } {
             match block_utils::get_device_info(path) {
                 Ok(device_info) => device_info.capacity,
