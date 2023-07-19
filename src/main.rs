@@ -22,7 +22,7 @@ struct Arguments {
     #[arg(short, long)]
     mask: String,
 
-    /// nbd device (default /dev/nbd0)
+    /// nbd device file (`modprobe nbd` to load module)
     #[arg(short, long, default_value = "/dev/nbd0")]
     nbd_device: String,
 
