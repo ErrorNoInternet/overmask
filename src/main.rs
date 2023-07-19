@@ -106,17 +106,18 @@ fn main() {
         let mut seed_buffer = vec![0; BLOCK_SIZE];
         let mut overlay_buffer = vec![0; BLOCK_SIZE];
         let zeros = vec![0; BLOCK_SIZE];
+
         let mut blocks_freed = 0;
-        let mut last_zero: (bool, u64) = (false, 0);
-        for block in 0..(seed_file_size / BLOCK_SIZE as u64) {
-            let offset = block * BLOCK_SIZE as u64;
-            match seed_file.read_at(&mut seed_buffer, offset) {
-                Ok(_) => (),
-                Err(error) => {
-                    println!("failed to read {BLOCK_SIZE} bytes from seed file at offset {offset}: {error}");
-                    continue;
-                }
+        let mut last_percent = 0.0;
+        let mut block_limit = seed_file_size / BLOCK_SIZE as u64;
+        for block in 0..block_limit {
+            let percent = block as f64 / block_limit as f64 * 100.0;
+            if percent - last_percent > 0.1 {
+                last_percent = percent;
+                println!("comparing blocks: {:.1}% ({block}/{block_limit})", percent);
             }
+
+            let offset = block * BLOCK_SIZE as u64;
             match overlay_file.read_at(&mut overlay_buffer, offset) {
                 Ok(_) => (),
                 Err(error) => {
@@ -124,25 +125,47 @@ fn main() {
                     continue;
                 }
             }
-            if !seed_buffer.iter().all(|&byte| byte == 0) && seed_buffer == overlay_buffer {
-                match overlay_file.write_at(&zeros, offset) {
+            if !overlay_buffer.iter().all(|&byte| byte == 0) {
+                match seed_file.read_at(&mut seed_buffer, offset) {
                     Ok(_) => (),
                     Err(error) => {
-                        println!("failed to write {BLOCK_SIZE} bytes to overlay file at offset {offset}: {error}");
+                        println!("failed to read {BLOCK_SIZE} bytes from seed file at offset {offset}: {error}");
                         continue;
                     }
-                };
-                match mask_file.write_at(&zeros, offset) {
-                    Ok(_) => (),
-                    Err(error) => {
-                        println!("failed to write {BLOCK_SIZE} bytes to mask file at offset {offset}: {error}");
-                        continue;
-                    }
-                };
-                blocks_freed += 1;
+                }
+                if seed_buffer == overlay_buffer {
+                    match overlay_file.write_at(&zeros, offset) {
+                        Ok(_) => (),
+                        Err(error) => {
+                            println!("failed to write {BLOCK_SIZE} bytes to overlay file at offset {offset}: {error}");
+                            continue;
+                        }
+                    };
+                    match mask_file.write_at(&zeros, offset) {
+                        Ok(_) => (),
+                        Err(error) => {
+                            println!("failed to write {BLOCK_SIZE} bytes to mask file at offset {offset}: {error}");
+                            continue;
+                        }
+                    };
+                    blocks_freed += 1;
+                }
             }
         }
-        for block in 0..(overlay_file_size / BLOCK_SIZE as u64) {
+
+        let mut last_zero: (bool, u64) = (false, 0);
+        last_percent = 0.0;
+        block_limit = overlay_file_size / BLOCK_SIZE as u64;
+        for block in 0..block_limit {
+            let percent = block as f64 / block_limit as f64 * 100.0;
+            if percent - last_percent > 0.1 {
+                last_percent = percent;
+                println!(
+                    "locating end of file: {:.1}% ({block}/{block_limit})",
+                    percent
+                );
+            }
+
             let offset = block * BLOCK_SIZE as u64;
             match overlay_file.read_at(&mut overlay_buffer, offset) {
                 Ok(_) => (),
@@ -159,6 +182,11 @@ fn main() {
                 last_zero.0 = false;
             }
         }
+
+        println!(
+            "successfully zeroed {blocks_freed} blocks ({} bytes)",
+            blocks_freed * BLOCK_SIZE
+        );
         if last_zero.0 {
             let truncated_size = last_zero.1 * BLOCK_SIZE as u64;
             println!(
@@ -177,10 +205,6 @@ fn main() {
                 }
             };
         }
-        println!(
-            "successfully zeroed {blocks_freed} blocks ({} bytes)",
-            blocks_freed * BLOCK_SIZE
-        );
         return;
     }
 
