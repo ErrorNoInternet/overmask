@@ -13,30 +13,30 @@ const BLOCK_SIZE: usize = 512;
 #[command(author, version, about, long_about = None)]
 struct Arguments {
     /// Original and unmodified data will be read
-    /// from the read-only seed file.
+    /// from the read-only seed file
     #[arg(short, long)]
     seed_file: String,
 
     /// Any modifications will be written to and
-    /// read from the overlay file.
+    /// read from the overlay file
     #[arg(short, long)]
     overlay_file: String,
 
     /// The mask file contains a mask of what areas
-    /// have been modified.
+    /// have been modified
     #[arg(short, long)]
     mask_file: String,
 
-    /// nbd device file (`modprobe nbd` to load module).
+    /// nbd device file (`modprobe nbd` to load module)
     #[arg(short, long, default_value = "/dev/nbd0")]
     nbd_device: String,
 
-    /// nbd timeout in seconds.
+    /// nbd timeout in seconds
     #[arg(short = 't', long, default_value_t = 60)]
     nbd_timeout: u64,
 
     /// Removes contents that are the same in the
-    /// seed file and overlay file.
+    /// seed file and overlay file
     #[arg(short, long, required = false)]
     clean: bool,
 }
