@@ -35,6 +35,11 @@ struct Arguments {
     #[arg(short = 't', long, default_value_t = 60)]
     nbd_timeout: u64,
 
+    /// Whether or not to print every single IO
+    /// operation (read, write, flush, etc)
+    #[arg(short, long, default_value_t = false)]
+    print_operations: bool,
+
     /// Removes contents that are the same in the
     /// seed file and overlay file
     #[arg(short, long, required = false)]
@@ -218,10 +223,13 @@ fn main() {
         seed_file_size: u64,
         overlay_file: fs::File,
         mask_file: fs::File,
+        arguments: &Arguments,
     }
     impl BlockDevice for VirtualBlockDevice {
         fn read(&mut self, offset: u64, bytes: &mut [u8]) -> Result<(), Error> {
-            println!("read(offset={offset} bytes={})", bytes.len());
+            if self.arguments.print_operations {
+                println!("read(offset={offset} bytes={})", bytes.len());
+            }
 
             let mut buffer = vec![0; bytes.len()];
             match self.seed_file.read_at(&mut buffer, offset) {
@@ -268,7 +276,9 @@ fn main() {
         }
 
         fn write(&mut self, offset: u64, bytes: &[u8]) -> Result<(), Error> {
-            println!("write(offset={offset} bytes={})", bytes.len());
+            if self.arguments.print_operations {
+                println!("write(offset={offset} bytes={})", bytes.len());
+            }
 
             match self.overlay_file.write_all_at(bytes, offset) {
                 Ok(_) => (),
@@ -293,7 +303,9 @@ fn main() {
         }
 
         fn flush(&mut self) -> Result<(), Error> {
-            println!("flush()");
+            if self.arguments.print_operations {
+                println!("flush()");
+            }
 
             match self.overlay_file.flush() {
                 Ok(_) => (),
@@ -311,7 +323,9 @@ fn main() {
         }
 
         fn unmount(&mut self) {
-            println!("unmount()")
+            if self.arguments.print_operations {
+                println!("unmount()")
+            }
         }
 
         fn block_size(&self) -> u32 {
@@ -328,6 +342,7 @@ fn main() {
         seed_file_size,
         overlay_file,
         mask_file,
+        arguments: &arguments,
     };
     unsafe {
         match mount(&mut virtual_block_device, &arguments.nbd_device, |device| {
