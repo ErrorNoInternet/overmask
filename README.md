@@ -9,7 +9,7 @@ cargo install --path .
 ```
 
 ## Usage
-```
+```sh
 # required for virtual block device (/dev/nbd*)
 sudo modprobe nbd
 
