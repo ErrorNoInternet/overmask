@@ -2,6 +2,8 @@ use clap::Parser;
 use std::{fs, io::Error, os::unix::prelude::FileExt};
 use vblk::{mount, BlockDevice};
 
+const BLOCK_SIZE: usize = 512;
+
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Arguments {
@@ -19,6 +21,15 @@ struct Arguments {
     /// have been modified.
     #[arg(short, long)]
     mask: String,
+
+    /// nbd device (default /dev/nbd0)
+    #[arg(short, long, default_value = "/dev/nbd0")]
+    nbd_device: String,
+
+    /// Removes contents that are the same in the
+    /// seed file and overlay file.
+    #[arg(short, long, required = false)]
+    clean: bool,
 }
 
 fn main() {
@@ -54,6 +65,87 @@ fn main() {
         }
     };
 
+    if arguments.clean {
+        let mut seed_buffer = vec![0; BLOCK_SIZE];
+        let mut overlay_buffer = vec![0; BLOCK_SIZE];
+        let zeros = vec![0; BLOCK_SIZE];
+        let mut blocks_freed = 0;
+        let mut last_zero: (bool, u64) = (false, 0);
+        for block in 0..(seed_file.metadata().unwrap().len() / BLOCK_SIZE as u64) {
+            let offset = block * BLOCK_SIZE as u64;
+            match seed_file.read_at(&mut seed_buffer, offset) {
+                Ok(_) => (),
+                Err(error) => {
+                    println!("failed to read {BLOCK_SIZE} bytes from seed file at offset {offset}: {error}");
+                    continue;
+                }
+            }
+            match overlay_file.read_at(&mut overlay_buffer, offset) {
+                Ok(_) => (),
+                Err(error) => {
+                    println!("failed to read {BLOCK_SIZE} bytes from overlay file at offset {offset}: {error}");
+                    continue;
+                }
+            }
+            if !seed_buffer.iter().all(|&byte| byte == 0) && seed_buffer == overlay_buffer {
+                match overlay_file.write_at(&zeros, offset) {
+                    Ok(_) => (),
+                    Err(error) => {
+                        println!("failed to write {BLOCK_SIZE} bytes to overlay file at offset {offset}: {error}");
+                        continue;
+                    }
+                };
+                match mask_file.write_at(&zeros, offset) {
+                    Ok(_) => (),
+                    Err(error) => {
+                        println!("failed to write {BLOCK_SIZE} bytes to mask file at offset {offset}: {error}");
+                        continue;
+                    }
+                };
+                blocks_freed += 1;
+            }
+        }
+        for block in 0..(overlay_file.metadata().unwrap().len() / BLOCK_SIZE as u64) {
+            let offset = block * BLOCK_SIZE as u64;
+            match overlay_file.read_at(&mut overlay_buffer, offset) {
+                Ok(_) => (),
+                Err(error) => {
+                    println!("failed to read {BLOCK_SIZE} bytes from overlay file at offset {offset}: {error}");
+                    continue;
+                }
+            }
+            if overlay_buffer.iter().all(|&byte| byte == 0) {
+                if !last_zero.0 {
+                    last_zero = (true, block);
+                }
+            } else {
+                last_zero.0 = false;
+            }
+        }
+        if last_zero.0 {
+            let original_size = overlay_file.metadata().unwrap().len();
+            let truncated_size = last_zero.1 * BLOCK_SIZE as u64;
+            println!("truncating files from {original_size} bytes to {truncated_size} bytes...");
+            match overlay_file.set_len(truncated_size) {
+                Ok(_) => (),
+                Err(error) => {
+                    println!("failed to set overlay file length to {truncated_size}: {error}")
+                }
+            };
+            match mask_file.set_len(truncated_size) {
+                Ok(_) => (),
+                Err(error) => {
+                    println!("failed to set mask file length to {truncated_size}: {error}")
+                }
+            };
+        }
+        println!(
+            "successfully zeroed {blocks_freed} blocks ({} bytes)",
+            blocks_freed * BLOCK_SIZE
+        );
+        return;
+    }
+
     struct VirtualBlockDevice {
         seed_file: fs::File,
         overlay_file: fs::File,
@@ -83,14 +175,7 @@ fn main() {
                     )
                 }
             }
-            let mut masked = false;
-            for byte in &mask_buffer {
-                if byte == &1u8 {
-                    masked = true;
-                    break;
-                }
-            }
-            if masked {
+            if !mask_buffer.iter().all(|&byte| byte == 0) {
                 let mut overlay_buffer = vec![0; bytes.len()];
                 match self.overlay_file.read_at(&mut overlay_buffer, offset) {
                     Ok(_) => (),
@@ -149,11 +234,11 @@ fn main() {
         }
 
         fn block_size(&self) -> u32 {
-            512
+            BLOCK_SIZE as u32
         }
 
         fn blocks(&self) -> u64 {
-            (self.seed_file.metadata().unwrap().len() / 512) as u64
+            self.seed_file.metadata().unwrap().len() / BLOCK_SIZE as u64
         }
     }
 
@@ -162,16 +247,20 @@ fn main() {
         overlay_file,
         mask_file,
     };
-
     unsafe {
-        mount(&mut virtual_block_device, "/dev/nbd0", |device| {
+        match mount(&mut virtual_block_device, &arguments.nbd_device, |device| {
+            println!("opened virtual block device at {}", arguments.nbd_device);
+
             ctrlc::set_handler(move || {
                 device.unmount().unwrap();
             })
             .unwrap();
-
             Ok(())
-        })
-        .unwrap();
+        }) {
+            Ok(_) => (),
+            Err(error) => {
+                println!("failed to mount virtual block device: {error}")
+            }
+        }
     }
 }
