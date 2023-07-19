@@ -52,7 +52,7 @@ fn main() {
     let seed_file = match fs::File::open(&arguments.seed_file) {
         Ok(seed_file) => seed_file,
         Err(error) => {
-            println!("failed to open seed file: {error}");
+            eprintln!("failed to open seed file: {error}");
             exit(1);
         }
     };
@@ -63,7 +63,7 @@ fn main() {
     {
         Ok(overlay_file) => overlay_file,
         Err(error) => {
-            println!("failed to open overlay file: {error}");
+            eprintln!("failed to open overlay file: {error}");
             exit(1);
         }
     };
@@ -74,7 +74,7 @@ fn main() {
     {
         Ok(mask_file) => mask_file,
         Err(error) => {
-            println!("failed to open mask file: {error}");
+            eprintln!("failed to open mask file: {error}");
             exit(1);
         }
     };
@@ -87,7 +87,7 @@ fn main() {
             match block_utils::get_device_info(path) {
                 Ok(device_info) => device_info.capacity,
                 Err(error) => {
-                    println!("failed to query block device: {error}");
+                    eprintln!("failed to query block device: {error}");
                     exit(1)
                 }
             }
@@ -96,12 +96,12 @@ fn main() {
                 Ok(file) => match file.metadata() {
                     Ok(metadata) => metadata.len(),
                     Err(error) => {
-                        println!("failed to query file metadata: {error}");
+                        eprintln!("failed to query file metadata: {error}");
                         exit(1)
                     }
                 },
                 Err(error) => {
-                    println!("failed to open file: {error}");
+                    eprintln!("failed to open file: {error}");
                     exit(1)
                 }
             }
@@ -131,7 +131,7 @@ fn main() {
             match overlay_file.read_at(&mut overlay_buffer, offset) {
                 Ok(_) => (),
                 Err(error) => {
-                    println!("failed to read {BLOCK_SIZE} bytes from overlay file at offset {offset}: {error}");
+                    eprintln!("failed to read {BLOCK_SIZE} bytes from overlay file at offset {offset}: {error}");
                     continue;
                 }
             }
@@ -139,7 +139,7 @@ fn main() {
                 match seed_file.read_at(&mut seed_buffer, offset) {
                     Ok(_) => (),
                     Err(error) => {
-                        println!("failed to read {BLOCK_SIZE} bytes from seed file at offset {offset}: {error}");
+                        eprintln!("failed to read {BLOCK_SIZE} bytes from seed file at offset {offset}: {error}");
                         continue;
                     }
                 }
@@ -147,14 +147,14 @@ fn main() {
                     match overlay_file.write_at(&zeros, offset) {
                         Ok(_) => (),
                         Err(error) => {
-                            println!("failed to write {BLOCK_SIZE} bytes to overlay file at offset {offset}: {error}");
+                            eprintln!("failed to write {BLOCK_SIZE} bytes to overlay file at offset {offset}: {error}");
                             continue;
                         }
                     };
                     match mask_file.write_at(&zeros, offset) {
                         Ok(_) => (),
                         Err(error) => {
-                            println!("failed to write {BLOCK_SIZE} bytes to mask file at offset {offset}: {error}");
+                            eprintln!("failed to write {BLOCK_SIZE} bytes to mask file at offset {offset}: {error}");
                             continue;
                         }
                     };
@@ -180,7 +180,7 @@ fn main() {
             match overlay_file.read_at(&mut overlay_buffer, offset) {
                 Ok(_) => (),
                 Err(error) => {
-                    println!("failed to read {BLOCK_SIZE} bytes from overlay file at offset {offset}: {error}");
+                    eprintln!("failed to read {BLOCK_SIZE} bytes from overlay file at offset {offset}: {error}");
                     continue;
                 }
             }
@@ -205,13 +205,13 @@ fn main() {
             match overlay_file.set_len(truncated_size) {
                 Ok(_) => (),
                 Err(error) => {
-                    println!("failed to set overlay file length to {truncated_size}: {error}")
+                    eprintln!("failed to set overlay file length to {truncated_size}: {error}")
                 }
             };
             match mask_file.set_len(truncated_size) {
                 Ok(_) => (),
                 Err(error) => {
-                    println!("failed to set mask file length to {truncated_size}: {error}")
+                    eprintln!("failed to set mask file length to {truncated_size}: {error}")
                 }
             };
         }
@@ -310,13 +310,13 @@ fn main() {
             match self.overlay_file.flush() {
                 Ok(_) => (),
                 Err(error) => {
-                    println!("failed to flush overlay file: {error}")
+                    eprintln!("failed to flush overlay file: {error}")
                 }
             }
             match self.mask_file.flush() {
                 Ok(_) => (),
                 Err(error) => {
-                    println!("failed to flush mask file: {error}")
+                    eprintln!("failed to flush mask file: {error}")
                 }
             }
             Ok(())
@@ -360,19 +360,19 @@ fn main() {
             match ctrlc::set_handler(move || match device.unmount() {
                 Ok(_) => (),
                 Err(error) => {
-                    println!("failed to unmount virtual block device: {error}")
+                    eprintln!("failed to unmount virtual block device: {error}")
                 }
             }) {
                 Ok(_) => (),
                 Err(error) => {
-                    println!("failed to add ctrlc handler: {error}")
+                    eprintln!("failed to add ctrlc handler: {error}")
                 }
             };
             Ok(())
         }) {
             Ok(_) => (),
             Err(error) => {
-                println!("failed to mount virtual block device: {error}")
+                eprintln!("failed to mount virtual block device: {error}")
             }
         }
     }
