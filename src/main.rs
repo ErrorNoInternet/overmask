@@ -271,7 +271,7 @@ fn main() {
                         bytes.len(),
                     );
                     if !self.arguments.ignore_errors {
-                        exit(1)
+                        return Err(error);
                     }
                 }
             }
@@ -284,7 +284,7 @@ fn main() {
                         bytes.len(),
                     );
                     if !self.arguments.ignore_errors {
-                        exit(1)
+                        return Err(error);
                     }
                 }
             }
@@ -298,7 +298,7 @@ fn main() {
                             bytes.len(),
                         );
                         if !self.arguments.ignore_errors {
-                            exit(1)
+                            return Err(error);
                         }
                     }
                 }
@@ -328,7 +328,7 @@ fn main() {
                         bytes.len(),
                     );
                     if !self.arguments.ignore_errors {
-                        exit(1)
+                        return Err(error);
                     }
                 }
             }
@@ -340,7 +340,7 @@ fn main() {
                         bytes.len(),
                     );
                     if !self.arguments.ignore_errors {
-                        exit(1)
+                        return Err(error);
                     }
                 }
             };
@@ -358,7 +358,7 @@ fn main() {
                 Err(error) => {
                     eprintln!("failed to flush overlay file: {error}");
                     if !self.arguments.ignore_errors {
-                        exit(1)
+                        return Err(error);
                     }
                 }
             }
@@ -367,7 +367,7 @@ fn main() {
                 Err(error) => {
                     eprintln!("failed to flush mask file: {error}");
                     if !self.arguments.ignore_errors {
-                        exit(1)
+                        return Err(error);
                     }
                 }
             }
