@@ -38,7 +38,7 @@ fn main() {
     let seed_file = match fs::File::open(&arguments.seed_file) {
         Ok(seed_file) => seed_file,
         Err(error) => {
-            println!("unable to open seed file: {error}");
+            println!("failed to open seed file: {error}");
             exit(1);
         }
     };
@@ -49,7 +49,7 @@ fn main() {
     {
         Ok(overlay_file) => overlay_file,
         Err(error) => {
-            println!("unable to open overlay file: {error}");
+            println!("failed to open overlay file: {error}");
             exit(1);
         }
     };
@@ -60,7 +60,7 @@ fn main() {
     {
         Ok(mask_file) => mask_file,
         Err(error) => {
-            println!("unable to open mask file: {error}");
+            println!("failed to open mask file: {error}");
             exit(1);
         }
     };
@@ -73,7 +73,7 @@ fn main() {
             match block_utils::get_device_info(path) {
                 Ok(device_info) => device_info.capacity,
                 Err(error) => {
-                    println!("unable to query block device: {error}");
+                    println!("failed to query block device: {error}");
                     exit(1)
                 }
             }
@@ -82,12 +82,12 @@ fn main() {
                 Ok(file) => match file.metadata() {
                     Ok(metadata) => metadata.len(),
                     Err(error) => {
-                        println!("unable to query file metadata: {error}");
+                        println!("failed to query file metadata: {error}");
                         exit(1)
                     }
                 },
                 Err(error) => {
-                    println!("unable to open file: {error}");
+                    println!("failed to open file: {error}");
                     exit(1)
                 }
             }
@@ -96,7 +96,7 @@ fn main() {
     let seed_file_size = get_size(arguments.seed_file);
     let overlay_file_size = get_size(arguments.overlay_file);
     let mask_file_size = get_size(arguments.mask_file);
-    println!("seed file: {seed_file_size} bytes, overlay file: {overlay_file_size} bytes, mask file: {mask_file_size}");
+    println!("seed file: {seed_file_size} bytes, overlay file: {overlay_file_size} bytes, mask file: {mask_file_size} bytes");
 
     if arguments.clean {
         let mut seed_buffer = vec![0; BLOCK_SIZE];
@@ -286,16 +286,25 @@ fn main() {
     unsafe {
         match mount(&mut virtual_block_device, &arguments.nbd_device, |device| {
             println!("opened virtual block device at {}", arguments.nbd_device);
+            match device.set_timeout(std::time::Duration::from_secs(arguments.nbd_timeout)) {
+                Ok(_) => (),
+                Err(error) => {
+                    println!(
+                        "failed to set virtual block device timeout to {} seconds: {error}",
+                        arguments.nbd_timeout
+                    )
+                }
+            };
 
             match ctrlc::set_handler(move || match device.unmount() {
                 Ok(_) => (),
                 Err(error) => {
-                    println!("unable to unmount virtual block device: {error}")
+                    println!("failed to unmount virtual block device: {error}")
                 }
             }) {
                 Ok(_) => (),
                 Err(error) => {
-                    println!("unable to add ctrlc handler: {error}")
+                    println!("failed to add ctrlc handler: {error}")
                 }
             };
             Ok(())
