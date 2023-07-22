@@ -2,7 +2,7 @@
 Add a writeable overlay on top of read-only files
 
 ## Installation
-```
+```sh
 git clone https://github.com/ErrorNoInternet/overmask
 cd overmask
 cargo install --path .
