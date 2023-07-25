@@ -373,6 +373,37 @@ fn main() {
             Ok(())
         }
 
+        fn trim(&mut self, offset: u64, len: u32) -> std::io::Result<()> {
+            if self.arguments.print_operations {
+                println!("trim(offset={offset} len={len})");
+            }
+
+            let zeros = vec![0; len as usize];
+            match self.overlay_file.write_at(&zeros, offset) {
+                Ok(_) => (),
+                Err(error) => {
+                    eprintln!(
+                        "failed to write {len} zeros to overlay file at offset {offset}: {error}"
+                    );
+                    if !self.arguments.ignore_errors {
+                        return Err(error);
+                    }
+                }
+            };
+            match self.mask_file.write_at(&zeros, offset) {
+                Ok(_) => (),
+                Err(error) => {
+                    eprintln!(
+                        "failed to write {len} zeros to mask file at offset {offset}: {error}"
+                    );
+                    if !self.arguments.ignore_errors {
+                        return Err(error);
+                    }
+                }
+            };
+            Ok(())
+        }
+
         fn unmount(&mut self) {
             if self.arguments.print_operations {
                 println!("unmount()")
