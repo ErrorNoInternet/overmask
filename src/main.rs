@@ -1,10 +1,5 @@
 use clap::Parser;
-use std::{
-    fs,
-    io::{Error, Write},
-    os::unix::prelude::FileExt,
-    process::exit,
-};
+use std::{fs, io::Write, os::unix::prelude::FileExt, process::exit};
 use vblk::{mount, BlockDevice};
 
 const BLOCK_SIZE: usize = 512;
