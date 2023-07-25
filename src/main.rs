@@ -257,7 +257,7 @@ fn main() {
         arguments: Arguments,
     }
     impl BlockDevice for VirtualBlockDevice {
-        fn read(&mut self, offset: u64, bytes: &mut [u8]) -> Result<(), Error> {
+        fn read(&mut self, offset: u64, bytes: &mut [u8]) -> std::io::Result<()> {
             if self.arguments.print_operations {
                 println!("read(offset={offset} bytes={})", bytes.len());
             }
@@ -315,7 +315,7 @@ fn main() {
             Ok(())
         }
 
-        fn write(&mut self, offset: u64, bytes: &[u8]) -> Result<(), Error> {
+        fn write(&mut self, offset: u64, bytes: &[u8]) -> std::io::Result<()> {
             if self.arguments.print_operations {
                 println!("write(offset={offset} bytes={})", bytes.len());
             }
@@ -347,7 +347,7 @@ fn main() {
             Ok(())
         }
 
-        fn flush(&mut self) -> Result<(), Error> {
+        fn flush(&mut self) -> std::io::Result<()> {
             if self.arguments.print_operations {
                 println!("flush()");
             }
