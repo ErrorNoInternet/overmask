@@ -40,6 +40,11 @@ struct Arguments {
     #[arg(short, long, default_value_t = false)]
     ignore_errors: bool,
 
+    /// Whether or not to write zeros to the overlay
+    /// and mask files after receiving trim()
+    #[arg(short, long, default_value_t = false)]
+    zero_trim: bool,
+
     /// Removes contents that are the same in the
     /// seed file and overlay file
     #[arg(short, long, required = false)]
@@ -373,29 +378,31 @@ fn main() {
                 println!("trim(offset={offset} len={len})");
             }
 
-            let zeros = vec![0; len as usize];
-            match self.overlay_file.write_at(&zeros, offset) {
-                Ok(_) => (),
-                Err(error) => {
-                    eprintln!(
+            if self.arguments.zero_trim {
+                let zeros = vec![0; len as usize];
+                match self.overlay_file.write_at(&zeros, offset) {
+                    Ok(_) => (),
+                    Err(error) => {
+                        eprintln!(
                         "failed to write {len} zeros to overlay file at offset {offset}: {error}"
                     );
-                    if !self.arguments.ignore_errors {
-                        return Err(error);
+                        if !self.arguments.ignore_errors {
+                            return Err(error);
+                        }
                     }
-                }
-            };
-            match self.mask_file.write_at(&zeros, offset) {
-                Ok(_) => (),
-                Err(error) => {
-                    eprintln!(
-                        "failed to write {len} zeros to mask file at offset {offset}: {error}"
-                    );
-                    if !self.arguments.ignore_errors {
-                        return Err(error);
+                };
+                match self.mask_file.write_at(&zeros, offset) {
+                    Ok(_) => (),
+                    Err(error) => {
+                        eprintln!(
+                            "failed to write {len} zeros to mask file at offset {offset}: {error}"
+                        );
+                        if !self.arguments.ignore_errors {
+                            return Err(error);
+                        }
                     }
-                }
-            };
+                };
+            }
             Ok(())
         }
 
