@@ -19,7 +19,7 @@
                 };
                 rust = (channel.rust.override {
                     targets = [
-                        "x86_64-unknown-linux-musl"
+                        "x86_64-unknown-linux-gnu"
                     ];
                     extensions = [ "rust-src" ];
                 });
