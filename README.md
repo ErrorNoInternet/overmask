@@ -16,7 +16,7 @@ sudo modprobe nbd
 # read from /dev/sda, but redirect all writes to overlay_file
 # and use mask_file to keep track of what has been written
 touch overlay_file mask_file
-sudo overmask --seed /dev/sda --overlay overlay_file --mask mask_file
+sudo overmask -s /dev/sda -o overlay_file -m mask_file
 
 # you can now run
 sudo dd if=/dev/zero of=/dev/nbd0
