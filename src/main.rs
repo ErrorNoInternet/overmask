@@ -307,7 +307,7 @@ fn main() {
                     .iter()
                     .zip(overlay_buffer.iter())
                     .zip(mask_buffer.iter())
-                    .map(|((&seed, &overlay), &mask)| if mask == 1 { overlay } else { seed })
+                    .map(|((&seed, &overlay), &mask)| if mask == 255 { overlay } else { seed })
                     .collect();
             };
 
@@ -332,7 +332,7 @@ fn main() {
                     }
                 }
             }
-            match self.mask_file.write_all_at(&vec![1; bytes.len()], offset) {
+            match self.mask_file.write_all_at(&vec![255; bytes.len()], offset) {
                 Ok(_) => (),
                 Err(error) => {
                     eprintln!(
