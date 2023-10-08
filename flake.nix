@@ -25,7 +25,7 @@
                 });
             in rec
             {
-                devShells.${system}.default = pkgs.mkShell {
+                devShells.default = pkgs.mkShell {
                     name = "rust-environment";
                     nativeBuildInputs = [
                         pkgs.pkg-config
@@ -42,7 +42,7 @@
 
                 packages.overmask = pkgs.rustPlatform.buildRustPackage {
                     pname = "overmask";
-                    version = "0.1.5";
+                    version = "0.2.0";
                     cargoLock.lockFile = ./Cargo.lock;
                     src = pkgs.lib.cleanSource ./.;
                     nativeBuildInputs = [ pkgs.pkg-config ];
