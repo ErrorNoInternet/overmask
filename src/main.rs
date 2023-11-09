@@ -7,18 +7,15 @@ const BLOCK_SIZE: usize = 512;
 #[derive(Debug, Clone, Parser)]
 #[command(author, version, about, long_about = None)]
 struct Arguments {
-    /// Original and unmodified data will be read
-    /// from the read-only seed file
+    /// Original, unmodified, read-only file
     #[arg(short, long)]
     seed_file: String,
 
-    /// Any modifications will be written to and
-    /// read from the overlay file
+    /// Where the modified (written) data would be stored
     #[arg(short, long)]
     overlay_file: String,
 
-    /// The mask file contains a mask of what areas
-    /// have been modified
+    /// Where a mask of the modified data would be stored
     #[arg(short, long)]
     mask_file: String,
 
@@ -30,23 +27,19 @@ struct Arguments {
     #[arg(short = 't', long, default_value_t = 60)]
     nbd_timeout: u64,
 
-    /// Whether or not to print every single IO
-    /// operation (read, write, flush, etc)
+    /// Print every IO operation (read(), write(), flush(), etc)
     #[arg(short, long, default_value_t = false)]
     print_operations: bool,
 
-    /// Whether or not to ignore read/write errors
-    /// from the seed, overlay, and mask files
+    /// Ignore IO errors from the underlying files
     #[arg(short, long, default_value_t = false)]
     ignore_errors: bool,
 
-    /// Whether or not to write zeros to the overlay
-    /// and mask files after receiving trim()
+    /// Overwrite overlay and mask with zeroes on trim()
     #[arg(short, long, default_value_t = false)]
     zero_trim: bool,
 
-    /// Removes contents that are the same in the
-    /// seed file and overlay file
+    /// Deduplicate data between the seed and overlay files
     #[arg(short, long, required = false)]
     clean: bool,
 }
@@ -256,6 +249,7 @@ fn main() {
         mask_file: fs::File,
         arguments: Arguments,
     }
+
     impl BlockDevice for VirtualBlockDevice {
         fn read(&mut self, offset: u64, bytes: &mut [u8]) -> std::io::Result<()> {
             if self.arguments.print_operations {
