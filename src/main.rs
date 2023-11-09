@@ -2,8 +2,7 @@ use clap::Parser;
 use std::{fs, io::Write, os::unix::prelude::FileExt, process::exit};
 use vblk::{mount, BlockDevice};
 
-const BLOCK_SIZE: usize = 512;
-
+/// Add a writeable overlay on top of read-only files
 #[derive(Debug, Clone, Parser)]
 #[command(author, version, about, long_about = None)]
 struct Arguments {
@@ -18,6 +17,10 @@ struct Arguments {
     /// Where a mask of the modified data would be stored
     #[arg(short, long)]
     mask_file: String,
+
+    /// Block size for each read/write operation
+    #[arg(short, long, default_value_t = 512)]
+    block_size: usize,
 
     /// nbd device file (requires nbd kernel module)
     #[arg(short, long, default_value = "/dev/nbd0")]
@@ -111,13 +114,13 @@ fn main() {
     println!("seed file: {seed_file_size} bytes, overlay file: {overlay_file_size} bytes, mask file: {mask_file_size} bytes");
 
     if arguments.clean {
-        let mut seed_buffer = vec![0; BLOCK_SIZE];
-        let mut overlay_buffer = vec![0; BLOCK_SIZE];
-        let zeros = vec![0; BLOCK_SIZE];
+        let mut seed_buffer = vec![0; arguments.block_size];
+        let mut overlay_buffer = vec![0; arguments.block_size];
+        let zeros = vec![0; arguments.block_size];
 
         let mut blocks_freed = 0;
         let mut last_percent = 0.0;
-        let mut block_limit = seed_file_size / BLOCK_SIZE as u64;
+        let mut block_limit = seed_file_size / arguments.block_size as u64;
         for block in 0..block_limit {
             let percent = block as f64 / block_limit as f64 * 100.0;
             if percent - last_percent > 0.1 {
@@ -125,11 +128,14 @@ fn main() {
                 println!("comparing blocks: {:.1}% ({block}/{block_limit})", percent);
             }
 
-            let offset = block * BLOCK_SIZE as u64;
+            let offset = block * arguments.block_size as u64;
             match overlay_file.read_at(&mut overlay_buffer, offset) {
                 Ok(_) => (),
                 Err(error) => {
-                    eprintln!("failed to read {BLOCK_SIZE} bytes from overlay file at offset {offset}: {error}");
+                    eprintln!(
+                        "failed to read {} bytes from overlay file at offset {offset}: {error}",
+                        arguments.block_size
+                    );
                     if arguments.ignore_errors {
                         continue;
                     } else {
@@ -141,7 +147,10 @@ fn main() {
                 match seed_file.read_at(&mut seed_buffer, offset) {
                     Ok(_) => (),
                     Err(error) => {
-                        eprintln!("failed to read {BLOCK_SIZE} bytes from seed file at offset {offset}: {error}");
+                        eprintln!(
+                            "failed to read {} bytes from seed file at offset {offset}: {error}",
+                            arguments.block_size
+                        );
                         if arguments.ignore_errors {
                             continue;
                         } else {
@@ -153,7 +162,7 @@ fn main() {
                     match overlay_file.write_at(&zeros, offset) {
                         Ok(_) => (),
                         Err(error) => {
-                            eprintln!("failed to write {BLOCK_SIZE} bytes to overlay file at offset {offset}: {error}");
+                            eprintln!("failed to write {} bytes to overlay file at offset {offset}: {error}", arguments.block_size);
                             if arguments.ignore_errors {
                                 continue;
                             } else {
@@ -164,7 +173,10 @@ fn main() {
                     match mask_file.write_at(&zeros, offset) {
                         Ok(_) => (),
                         Err(error) => {
-                            eprintln!("failed to write {BLOCK_SIZE} bytes to mask file at offset {offset}: {error}");
+                            eprintln!(
+                                "failed to write {} bytes to mask file at offset {offset}: {error}",
+                                arguments.block_size
+                            );
                             if arguments.ignore_errors {
                                 continue;
                             } else {
@@ -179,7 +191,7 @@ fn main() {
 
         let mut last_zero: (bool, u64) = (false, 0);
         last_percent = 0.0;
-        block_limit = overlay_file_size / BLOCK_SIZE as u64;
+        block_limit = overlay_file_size / arguments.block_size as u64;
         for block in 0..block_limit {
             let percent = block as f64 / block_limit as f64 * 100.0;
             if percent - last_percent > 0.1 {
@@ -190,11 +202,14 @@ fn main() {
                 );
             }
 
-            let offset = block * BLOCK_SIZE as u64;
+            let offset = block * arguments.block_size as u64;
             match overlay_file.read_at(&mut overlay_buffer, offset) {
                 Ok(_) => (),
                 Err(error) => {
-                    eprintln!("failed to read {BLOCK_SIZE} bytes from overlay file at offset {offset}: {error}");
+                    eprintln!(
+                        "failed to read {} bytes from overlay file at offset {offset}: {error}",
+                        arguments.block_size
+                    );
                     if arguments.ignore_errors {
                         continue;
                     } else {
@@ -213,10 +228,10 @@ fn main() {
 
         println!(
             "successfully zeroed {blocks_freed} blocks ({} bytes)",
-            blocks_freed * BLOCK_SIZE
+            blocks_freed * arguments.block_size
         );
         if last_zero.0 {
-            let truncated_size = last_zero.1 * BLOCK_SIZE as u64;
+            let truncated_size = last_zero.1 * arguments.block_size as u64;
             println!(
                 "truncating files from {overlay_file_size} bytes to {truncated_size} bytes..."
             );
@@ -407,11 +422,11 @@ fn main() {
         }
 
         fn block_size(&self) -> u32 {
-            BLOCK_SIZE as u32
+            self.arguments.block_size as u32
         }
 
         fn blocks(&self) -> u64 {
-            self.seed_file_size / BLOCK_SIZE as u64
+            self.seed_file_size / self.arguments.block_size as u64
         }
     }
 
