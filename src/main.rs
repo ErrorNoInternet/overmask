@@ -10,7 +10,7 @@ struct Arguments {
     #[arg(short, long)]
     seed_file: String,
 
-    /// Where the modified (written) data would be stored
+    /// Where modified (written) data would be stored
     #[arg(short, long)]
     overlay_file: String,
 
@@ -18,7 +18,7 @@ struct Arguments {
     #[arg(short, long)]
     mask_file: String,
 
-    /// Block size for each read/write operation
+    /// Block size for all read/write operations
     #[arg(short, long, default_value_t = 512)]
     block_size: usize,
 
@@ -34,7 +34,7 @@ struct Arguments {
     #[arg(short, long, default_value_t = false)]
     print_operations: bool,
 
-    /// Ignore IO errors from the underlying files
+    /// Ignore IO errors from the underlying files/devices
     #[arg(short, long, default_value_t = false)]
     ignore_errors: bool,
 
@@ -42,7 +42,7 @@ struct Arguments {
     #[arg(short, long, default_value_t = false)]
     zero_trim: bool,
 
-    /// Deduplicate data between the seed and overlay files
+    /// Deduplicate data between the seed and overlay files/devices
     #[arg(short, long, required = false)]
     clean: bool,
 }
