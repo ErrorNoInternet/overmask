@@ -120,7 +120,7 @@ fn main() {
 
         let mut blocks_freed = 0;
         let mut last_percent = 0.0;
-        let mut block_limit = seed_file_size / arguments.block_size as u64;
+        let block_limit = seed_file_size / arguments.block_size as u64;
         for block in 0..block_limit {
             let percent = block as f64 / block_limit as f64 * 100.0;
             if percent - last_percent > 0.1 {
@@ -143,71 +143,11 @@ fn main() {
                     }
                 }
             }
-            if !overlay_buffer.iter().all(|&byte| byte == 0) {
-                match seed_file.read_at(&mut seed_buffer, offset) {
-                    Ok(_) => (),
-                    Err(error) => {
-                        eprintln!(
-                            "failed to read {} bytes from seed file at offset {offset}: {error}",
-                            arguments.block_size
-                        );
-                        if arguments.ignore_errors {
-                            continue;
-                        } else {
-                            exit(1)
-                        }
-                    }
-                }
-                if seed_buffer == overlay_buffer {
-                    match overlay_file.write_at(&zeros, offset) {
-                        Ok(_) => (),
-                        Err(error) => {
-                            eprintln!("failed to write {} bytes to overlay file at offset {offset}: {error}", arguments.block_size);
-                            if arguments.ignore_errors {
-                                continue;
-                            } else {
-                                exit(1)
-                            }
-                        }
-                    };
-                    match mask_file.write_at(&zeros, offset) {
-                        Ok(_) => (),
-                        Err(error) => {
-                            eprintln!(
-                                "failed to write {} bytes to mask file at offset {offset}: {error}",
-                                arguments.block_size
-                            );
-                            if arguments.ignore_errors {
-                                continue;
-                            } else {
-                                exit(1)
-                            }
-                        }
-                    };
-                    blocks_freed += 1;
-                }
-            }
-        }
-
-        let mut last_zero: (bool, u64) = (false, 0);
-        last_percent = 0.0;
-        block_limit = overlay_file_size / arguments.block_size as u64;
-        for block in 0..block_limit {
-            let percent = block as f64 / block_limit as f64 * 100.0;
-            if percent - last_percent > 0.1 {
-                last_percent = percent;
-                println!(
-                    "locating end of file: {:.1}% ({block}/{block_limit})",
-                    percent
-                );
-            }
-
-            let offset = block * arguments.block_size as u64;
-            match overlay_file.read_at(&mut overlay_buffer, offset) {
+            match seed_file.read_at(&mut seed_buffer, offset) {
                 Ok(_) => (),
                 Err(error) => {
                     eprintln!(
-                        "failed to read {} bytes from overlay file at offset {offset}: {error}",
+                        "failed to read {} bytes from seed file at offset {offset}: {error}",
                         arguments.block_size
                     );
                     if arguments.ignore_errors {
@@ -217,12 +157,36 @@ fn main() {
                     }
                 }
             }
-            if overlay_buffer.iter().all(|&byte| byte == 0) {
-                if !last_zero.0 {
-                    last_zero = (true, block);
-                }
-            } else {
-                last_zero.0 = false;
+            if seed_buffer == overlay_buffer {
+                match overlay_file.write_at(&zeros, offset) {
+                    Ok(_) => (),
+                    Err(error) => {
+                        eprintln!(
+                            "failed to write {} bytes to overlay file at offset {offset}: {error}",
+                            arguments.block_size
+                        );
+                        if arguments.ignore_errors {
+                            continue;
+                        } else {
+                            exit(1)
+                        }
+                    }
+                };
+                match mask_file.write_at(&zeros, offset) {
+                    Ok(_) => (),
+                    Err(error) => {
+                        eprintln!(
+                            "failed to write {} bytes to mask file at offset {offset}: {error}",
+                            arguments.block_size
+                        );
+                        if arguments.ignore_errors {
+                            continue;
+                        } else {
+                            exit(1)
+                        }
+                    }
+                };
+                blocks_freed += 1;
             }
         }
 
@@ -230,30 +194,6 @@ fn main() {
             "successfully zeroed {blocks_freed} blocks ({} bytes)",
             blocks_freed * arguments.block_size
         );
-        if last_zero.0 {
-            let truncated_size = last_zero.1 * arguments.block_size as u64;
-            println!(
-                "truncating files from {overlay_file_size} bytes to {truncated_size} bytes..."
-            );
-            match overlay_file.set_len(truncated_size) {
-                Ok(_) => (),
-                Err(error) => {
-                    eprintln!("failed to set overlay file length to {truncated_size}: {error}");
-                    if !arguments.ignore_errors {
-                        exit(1)
-                    }
-                }
-            };
-            match mask_file.set_len(truncated_size) {
-                Ok(_) => (),
-                Err(error) => {
-                    eprintln!("failed to set mask file length to {truncated_size}: {error}");
-                    if !arguments.ignore_errors {
-                        exit(1)
-                    }
-                }
-            };
-        }
         return;
     }
 
