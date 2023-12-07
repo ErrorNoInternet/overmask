@@ -212,18 +212,6 @@ fn main() {
             }
 
             let mut buffer = vec![0; bytes.len()];
-            match self.seed_file.read_at(&mut buffer, offset) {
-                Ok(_) => (),
-                Err(error) => {
-                    eprintln!(
-                        "failed to read {} bytes from seed file at offset {offset}: {error}",
-                        bytes.len(),
-                    );
-                    if !self.arguments.ignore_errors {
-                        return Err(error);
-                    }
-                }
-            }
             let mut mask_buffer = vec![0; bytes.len()];
             match self.mask_file.read_at(&mut mask_buffer, offset) {
                 Ok(_) => (),
@@ -237,7 +225,45 @@ fn main() {
                     }
                 }
             }
-            if !mask_buffer.iter().all(|&byte| byte == 0) {
+            if mask_buffer.iter().all(|&byte| byte == 0) {
+                match self.seed_file.read_at(&mut buffer, offset) {
+                    Ok(_) => (),
+                    Err(error) => {
+                        eprintln!(
+                            "failed to read {} bytes from seed file at offset {offset}: {error}",
+                            bytes.len(),
+                        );
+                        if !self.arguments.ignore_errors {
+                            return Err(error);
+                        }
+                    }
+                }
+            } else if mask_buffer.iter().all(|&byte| byte == 255) {
+                match self.overlay_file.read_at(&mut buffer, offset) {
+                    Ok(_) => (),
+                    Err(error) => {
+                        eprintln!(
+                            "failed to read {} bytes from overlay file at offset {offset}: {error}",
+                            bytes.len(),
+                        );
+                        if !self.arguments.ignore_errors {
+                            return Err(error);
+                        }
+                    }
+                }
+            } else {
+                match self.seed_file.read_at(&mut buffer, offset) {
+                    Ok(_) => (),
+                    Err(error) => {
+                        eprintln!(
+                            "failed to read {} bytes from seed file at offset {offset}: {error}",
+                            bytes.len(),
+                        );
+                        if !self.arguments.ignore_errors {
+                            return Err(error);
+                        }
+                    }
+                }
                 let mut overlay_buffer = vec![0; bytes.len()];
                 match self.overlay_file.read_at(&mut overlay_buffer, offset) {
                     Ok(_) => (),
