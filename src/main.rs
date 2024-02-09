@@ -75,6 +75,6 @@ fn main() {
             print_operations,
             zero_trim,
         } => modes::device::main(files, &nbd_device, nbd_timeout, print_operations, zero_trim),
-        MainSubcommand::Clean => modes::clean::main(&files),
+        MainSubcommand::Clean { truncate } => modes::clean::main(&files, truncate),
     };
 }

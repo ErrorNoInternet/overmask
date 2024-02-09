@@ -32,7 +32,7 @@ pub struct Arguments {
 #[derive(Debug, Subcommand)]
 pub enum MainSubcommand {
     /// Create a virtual block device to capture writes
-    #[command(visible_aliases = ["dev"])]
+    #[command(visible_aliases = ["d", "dev"])]
     Device {
         /// nbd device file (requires nbd kernel module)
         #[arg(short, long, default_value = "/dev/nbd0")]
@@ -52,6 +52,10 @@ pub enum MainSubcommand {
     },
 
     /// Deduplicate data between the seed and overlay
-    #[command(visible_aliases = ["dedup"])]
-    Clean,
+    #[command(visible_aliases = ["c"])]
+    Clean {
+        /// Truncate the overlay and mask files to the last used byte
+        #[arg(short, long)]
+        truncate: bool,
+    },
 }

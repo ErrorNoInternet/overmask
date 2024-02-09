@@ -1,7 +1,7 @@
 use crate::Files;
 use std::{os::unix::fs::FileExt, process::exit};
 
-pub fn main(files: &Files) {
+pub fn main(files: &Files, truncate: bool) {
     let mut seed_buffer = vec![0; files.block_size as usize];
     let mut overlay_buffer = vec![0; files.block_size as usize];
     let zeros = vec![0; files.block_size as usize];
