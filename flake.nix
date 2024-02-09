@@ -43,8 +43,10 @@
           name = "overmask";
 
           buildInputs = with pkgs; [
+            pkg-config
             rust
             taplo
+            udev
           ];
 
           RUST_BACKTRACE = 1;
@@ -57,8 +59,13 @@
           cargoLock.lockFile = ./Cargo.lock;
           src = pkgs.lib.cleanSource ./.;
 
-          nativeBuildInputs = [
+          nativeBuildInputs = with pkgs; [
+            pkg-config
             rust
+          ];
+
+          buildInputs = with pkgs; [
+            udev
           ];
         };
         packages.default = packages.overmask;
