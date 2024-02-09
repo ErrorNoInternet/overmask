@@ -31,6 +31,21 @@ pub struct Arguments {
 
 #[derive(Debug, Subcommand)]
 pub enum MainSubcommand {
+    /// Apply the overlay on top of the seed using the mask
+    #[command(visible_aliases = ["a"])]
+    Apply {
+        #[arg(long)]
+        force: bool,
+    },
+
+    /// Deduplicate data between the seed and overlay
+    #[command(visible_aliases = ["c"])]
+    Clean {
+        /// Truncate the overlay and mask files to the last used byte
+        #[arg(short, long)]
+        truncate: bool,
+    },
+
     /// Create a virtual block device to capture writes
     #[command(visible_aliases = ["d", "dev"])]
     Device {
@@ -49,13 +64,5 @@ pub enum MainSubcommand {
         /// Overwrite overlay and mask with zeroes on trim()
         #[arg(short, long)]
         zero_trim: bool,
-    },
-
-    /// Deduplicate data between the seed and overlay
-    #[command(visible_aliases = ["c"])]
-    Clean {
-        /// Truncate the overlay and mask files to the last used byte
-        #[arg(short, long)]
-        truncate: bool,
     },
 }

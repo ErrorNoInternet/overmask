@@ -71,12 +71,13 @@ fn main() {
         ignore_errors: arguments.ignore_errors,
     };
     match arguments.subcommand {
+        MainSubcommand::Apply { force } => modes::apply::main(&files, &arguments.seed_file, force),
+        MainSubcommand::Clean { truncate } => modes::clean::main(&files, truncate),
         MainSubcommand::Device {
             nbd_device,
             nbd_timeout,
             print_operations,
             zero_trim,
         } => modes::device::main(files, &nbd_device, nbd_timeout, print_operations, zero_trim),
-        MainSubcommand::Clean { truncate } => modes::clean::main(&files, truncate),
     };
 }
