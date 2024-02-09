@@ -6,15 +6,15 @@ use std::path::PathBuf;
 #[command(version)]
 pub struct Arguments {
     /// Where original read-only data would be read from
-    #[arg(short, long)]
+    #[arg(short, long, value_name = "FILE")]
     pub seed_file: PathBuf,
 
     /// Where modified (written) data would be stored
-    #[arg(short, long)]
+    #[arg(short, long, value_name = "FILE")]
     pub overlay_file: PathBuf,
 
     /// Where a mask of the modified data would be stored
-    #[arg(short, long)]
+    #[arg(short, long, value_name = "FILE")]
     pub mask_file: PathBuf,
 
     /// Block size for all read and write operations
@@ -34,6 +34,7 @@ pub enum MainSubcommand {
     /// Apply the overlay on top of the seed using the mask
     #[command(visible_aliases = ["a"])]
     Apply {
+        /// I know what I am doing
         #[arg(long)]
         force: bool,
     },
@@ -53,7 +54,7 @@ pub enum MainSubcommand {
         #[arg(short, long, default_value = "/dev/nbd0")]
         nbd_device: PathBuf,
 
-        /// nbd timeout in seconds
+        /// nbd device timeout in seconds
         #[arg(short = 't', long, default_value_t = 60)]
         nbd_timeout: u64,
 
