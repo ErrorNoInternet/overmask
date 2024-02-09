@@ -38,6 +38,7 @@ pub fn main(files: &Files) {
             }
             exit(1)
         }
+
         if seed_buffer == overlay_buffer {
             if let Err(error) = files.overlay.write_at(&zeros, offset) {
                 eprintln!(
