@@ -2,6 +2,8 @@ use crate::Files;
 use std::{fs, io::Write, os::unix::fs::FileExt, path::PathBuf, process::exit};
 use vblk::BlockDevice;
 
+const MASK: u8 = 0xff;
+
 pub struct Virtual {
     pub files: Files,
     pub print_operations: bool,
@@ -35,7 +37,7 @@ impl BlockDevice for Virtual {
                     return Err(error);
                 }
             }
-        } else if mask_buffer.iter().all(|&byte| byte == 255) {
+        } else if mask_buffer.iter().all(|&byte| byte == MASK) {
             if let Err(error) = self.files.overlay.read_at(&mut buffer, offset) {
                 eprintln!(
                     "overmask: couldn't read {} bytes from overlay file at offset {offset}: {error}",
@@ -70,7 +72,7 @@ impl BlockDevice for Virtual {
                 .iter()
                 .zip(overlay_buffer.iter())
                 .zip(mask_buffer.iter())
-                .map(|((&seed, &overlay), &mask)| if mask == 255 { overlay } else { seed })
+                .map(|((&seed, &overlay), &mask)| if mask == MASK { overlay } else { seed })
                 .collect();
         };
 
@@ -95,7 +97,7 @@ impl BlockDevice for Virtual {
         if let Err(error) = self
             .files
             .mask
-            .write_all_at(&vec![255; bytes.len()], offset)
+            .write_all_at(&vec![MASK; bytes.len()], offset)
         {
             eprintln!(
                 "overmask: couldn't write {} bytes to mask file at offset {offset}: {error}",
