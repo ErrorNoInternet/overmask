@@ -148,7 +148,7 @@ impl BlockDevice for Virtual {
         if self.zero_trim {
             let zeros = vec![0; len as usize];
             match self.files.overlay.write_all_at(&zeros, offset) {
-                Ok(_) => (),
+                Ok(()) => (),
                 Err(error) => {
                     eprintln!(
                         "overmask: couldn't write {len} zeros to overlay file at offset {offset}: {error}"
@@ -159,7 +159,7 @@ impl BlockDevice for Virtual {
                 }
             };
             match self.files.mask.write_all_at(&zeros, offset) {
-                Ok(_) => (),
+                Ok(()) => (),
                 Err(error) => {
                     eprintln!(
                         "overmask: couldn't write {len} zeros to mask file at offset {offset}: {error}"

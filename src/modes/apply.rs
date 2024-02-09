@@ -7,7 +7,7 @@ pub fn main(files: &Files, seed_file: &PathBuf, force: bool) {
         exit(2);
     }
 
-    let writeable_seed = match fs::File::options().read(true).write(true).open(&seed_file) {
+    let writeable_seed = match fs::File::options().read(true).write(true).open(seed_file) {
         Ok(file) => file,
         Err(error) => {
             eprintln!("overmask: couldn't open seed file: {error}");
