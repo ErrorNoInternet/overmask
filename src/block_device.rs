@@ -147,7 +147,7 @@ impl BlockDevice for Virtual {
 
         if self.zero_trim {
             let zeros = vec![0; len as usize];
-            match self.files.overlay.write_at(&zeros, offset) {
+            match self.files.overlay.write_all_at(&zeros, offset) {
                 Ok(_) => (),
                 Err(error) => {
                     eprintln!(
@@ -158,7 +158,7 @@ impl BlockDevice for Virtual {
                     }
                 }
             };
-            match self.files.mask.write_at(&zeros, offset) {
+            match self.files.mask.write_all_at(&zeros, offset) {
                 Ok(_) => (),
                 Err(error) => {
                     eprintln!(

@@ -40,7 +40,7 @@ pub fn main(files: &Files, truncate: bool) {
         }
 
         if seed_buffer == overlay_buffer {
-            if let Err(error) = files.overlay.write_at(&zeros, offset) {
+            if let Err(error) = files.overlay.write_all_at(&zeros, offset) {
                 eprintln!(
                     "overmask: couldn't write {} bytes to overlay file at offset {offset}: {error}",
                     files.block_size
@@ -49,7 +49,7 @@ pub fn main(files: &Files, truncate: bool) {
                     exit(1);
                 }
             };
-            if let Err(error) = files.mask.write_at(&zeros, offset) {
+            if let Err(error) = files.mask.write_all_at(&zeros, offset) {
                 eprintln!(
                     "overmask: couldn't write {} bytes to mask file at offset {offset}: {error}",
                     files.block_size
