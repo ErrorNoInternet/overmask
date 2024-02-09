@@ -1,5 +1,11 @@
 use crate::Files;
-use std::{fs, io::Write, os::unix::fs::FileExt, path::PathBuf, process::exit};
+use std::{
+    fs,
+    io::{self, Write},
+    os::unix::fs::FileExt,
+    path::PathBuf,
+    process::exit,
+};
 use vblk::BlockDevice;
 
 const MASK: u8 = 0xff;
@@ -11,7 +17,7 @@ pub struct Virtual {
 }
 
 impl BlockDevice for Virtual {
-    fn read(&mut self, offset: u64, bytes: &mut [u8]) -> std::io::Result<()> {
+    fn read(&mut self, offset: u64, bytes: &mut [u8]) -> io::Result<()> {
         if self.print_operations {
             println!("read(offset={offset} bytes={})", bytes.len());
         }
@@ -80,7 +86,7 @@ impl BlockDevice for Virtual {
         Ok(())
     }
 
-    fn write(&mut self, offset: u64, bytes: &[u8]) -> std::io::Result<()> {
+    fn write(&mut self, offset: u64, bytes: &[u8]) -> io::Result<()> {
         if self.print_operations {
             println!("write(offset={offset} bytes={})", bytes.len());
         }
@@ -110,7 +116,7 @@ impl BlockDevice for Virtual {
         Ok(())
     }
 
-    fn flush(&mut self) -> std::io::Result<()> {
+    fn flush(&mut self) -> io::Result<()> {
         if self.print_operations {
             println!("flush()");
         }
@@ -136,7 +142,7 @@ impl BlockDevice for Virtual {
         Ok(())
     }
 
-    fn trim(&mut self, offset: u64, len: u32) -> std::io::Result<()> {
+    fn trim(&mut self, offset: u64, len: u32) -> io::Result<()> {
         if self.print_operations {
             println!("trim(offset={offset} len={len})");
         }
