@@ -185,12 +185,7 @@ impl BlockDevice for Virtual {
 }
 
 pub fn get_size(path: &PathBuf) -> u64 {
-    let is_block_device = if let Ok(is_block_device) = block_utils::is_block_device(path) {
-        is_block_device
-    } else {
-        false
-    };
-    if is_block_device {
+    if block_utils::is_block_device(path).unwrap_or(false) {
         match block_utils::get_device_info(path) {
             Ok(device_info) => device_info.capacity,
             Err(error) => {
