@@ -1,0 +1,98 @@
+name: Lint
+on:
+  push:
+    paths:
+      - '**.nix'
+      - '**.rs'
+      - Cargo.*
+      - flake.lock
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  cargo-toml:
+    name: Cargo.toml
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v9
+        with:
+          extra-conf: |
+            log-lines = 500
+
+      - name: Set up Magic Nix Cache
+        uses: DeterminateSystems/magic-nix-cache-action@v3
+
+      - name: Run taplo lint
+        run: nix develop -c taplo lint Cargo.toml
+
+      - name: Run taplo fmt
+        if: always()
+        run: nix develop -c taplo fmt --check Cargo.toml
+
+  rust:
+    name: Rust
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v9
+        with:
+          extra-conf: |
+            log-lines = 500
+
+      - name: Set up Magic Nix Cache
+        uses: DeterminateSystems/magic-nix-cache-action@v3
+
+      - name: Set up build cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: build-${{ runner.os }}-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('flake.nix') }}-${{ hashFiles('**.lock') }}
+
+      - name: cargo clippy
+        run: nix develop -c cargo clippy -- -Dwarnings -Wclippy::pedantic
+
+      - name: cargo fmt
+        if: always()
+        run: nix develop -c cargo fmt --check
+
+  nix:
+    name: Nix
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v9
+        with:
+          extra-conf: |
+            log-lines = 500
+
+      - name: Set up Magic Nix Cache
+        uses: DeterminateSystems/magic-nix-cache-action@v3
+
+      - name: Check formatting
+        run: nix run nixpkgs#alejandra -- -c .
+
+      - name: Run static code analysis
+        if: always()
+        run: nix run nixpkgs#statix -- check
+
+      - name: Scan for dead code
+        if: always()
+        run: nix run nixpkgs#deadnix -- -f
