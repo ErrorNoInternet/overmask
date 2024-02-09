@@ -25,20 +25,18 @@ pub fn main(files: &Files, truncate: bool) {
                 "overmask: couldn't read {} bytes from overlay file at offset {offset}: {error}",
                 files.block_size
             );
-            if files.ignore_errors {
-                continue;
+            if !files.ignore_errors {
+                exit(1);
             }
-            exit(1)
         }
         if let Err(error) = files.seed.read_at(&mut seed_buffer, offset) {
             eprintln!(
                 "overmask: couldn't read {} bytes from seed file at offset {offset}: {error}",
                 files.block_size
             );
-            if files.ignore_errors {
-                continue;
+            if !files.ignore_errors {
+                exit(1);
             }
-            exit(1)
         }
 
         if seed_buffer == overlay_buffer {
@@ -47,20 +45,18 @@ pub fn main(files: &Files, truncate: bool) {
                     "overmask: couldn't write {} bytes to overlay file at offset {offset}: {error}",
                     files.block_size
                 );
-                if files.ignore_errors {
-                    continue;
+                if !files.ignore_errors {
+                    exit(1);
                 }
-                exit(1)
             };
             if let Err(error) = files.mask.write_at(&zeros, offset) {
                 eprintln!(
                     "overmask: couldn't write {} bytes to mask file at offset {offset}: {error}",
                     files.block_size
                 );
-                if files.ignore_errors {
-                    continue;
+                if !files.ignore_errors {
+                    exit(1);
                 }
-                exit(1)
             };
             blocks_freed += 1;
         }
@@ -97,10 +93,9 @@ fn do_truncate(files: &Files) {
                 "overmask: couldn't read {} bytes from mask file at offset {offset}: {error}",
                 files.block_size
             );
-            if files.ignore_errors {
-                continue;
+            if !files.ignore_errors {
+                exit(1);
             }
-            exit(1);
         }
         if !mask_buffer.iter().all(|&byte| byte == 0) {
             break;
@@ -108,7 +103,7 @@ fn do_truncate(files: &Files) {
         end_of_file = Some(offset);
     }
     if let Some(offset) = end_of_file {
-        println!("truncating mask and overlay files to {offset} bytes...");
+        println!("truncating overlay and mask files to {offset} bytes...");
         if let Err(error) = files.mask.set_len(offset) {
             eprintln!("overmask: couldn't truncate mask file to {offset} bytes: {error}");
             exit(1);
@@ -117,7 +112,7 @@ fn do_truncate(files: &Files) {
             eprintln!("overmask: couldn't truncate overlay file to {offset} bytes: {error}");
             exit(1);
         };
-        println!("successfully truncated mask and overlay files to {offset} bytes");
+        println!("successfully truncated overlay and mask files to {offset} bytes");
     } else {
         println!("no unused block found");
     }

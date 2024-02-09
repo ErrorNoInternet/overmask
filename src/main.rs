@@ -7,6 +7,8 @@ use crate::block_device::get_size;
 use clap::Parser;
 use std::{fs, process::exit};
 
+const MASK: u8 = 0xff;
+
 pub struct Files {
     pub seed: fs::File,
     pub seed_size: u64,

@@ -1,4 +1,4 @@
-use crate::Files;
+use crate::{Files, MASK};
 use std::{
     fs,
     io::{self, Write},
@@ -7,8 +7,6 @@ use std::{
     process::exit,
 };
 use vblk::BlockDevice;
-
-const MASK: u8 = 0xff;
 
 pub struct Virtual {
     pub files: Files,
