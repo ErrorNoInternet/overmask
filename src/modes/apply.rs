@@ -80,7 +80,7 @@ pub fn main(files: &Files, seed_file: &PathBuf, force: bool) {
         blocks_applied += 1;
     }
     println!(
-        "successfully applied {blocks_applied} blocks ({} bytes)",
+        "successfully applied {blocks_applied} blocks ({} bytes) to seed",
         blocks_applied * files.block_size
     );
 }
