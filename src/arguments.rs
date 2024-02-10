@@ -5,20 +5,20 @@ use std::path::PathBuf;
 #[derive(Debug, Parser)]
 #[command(version)]
 pub struct Arguments {
-    /// Where original read-only data would be read from
+    /// Where original read-only data should be read from
     #[arg(short, long, value_name = "FILE")]
     pub seed_file: PathBuf,
 
-    /// Where modified (written) data would be stored
+    /// Where modified (written) data should be stored
     #[arg(short, long, value_name = "FILE")]
     pub overlay_file: PathBuf,
 
-    /// Where a mask of the modified data would be stored
+    /// Where a mask of the modified data should be stored
     #[arg(short, long, value_name = "FILE")]
     pub mask_file: PathBuf,
 
     /// Block size for all read and write operations
-    #[arg(short, long, default_value_t = 512)]
+    #[arg(short, long, value_name = "BYTES", default_value_t = 512)]
     pub block_size: u32,
 
     /// Ignore IO errors from the underlying storage backend
@@ -34,7 +34,6 @@ pub enum MainSubcommand {
     /// Apply the overlay on top of the seed using the mask
     #[command(visible_aliases = ["a"])]
     Apply {
-        /// I know what I am doing
         #[arg(long)]
         force: bool,
     },
@@ -55,7 +54,7 @@ pub enum MainSubcommand {
         nbd_device: PathBuf,
 
         /// nbd device timeout in seconds
-        #[arg(short = 't', long, default_value_t = 60)]
+        #[arg(short = 't', long, value_name = "SECONDS", default_value_t = 60)]
         nbd_timeout: u64,
 
         /// Print every IO operation (read(), write(), flush(), etc)
