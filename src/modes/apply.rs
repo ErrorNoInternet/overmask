@@ -28,8 +28,8 @@ pub fn main(files: &Files, seed_file: &PathBuf, force: bool) {
             last_percent = percent;
             println!("applying blocks: {:.1}% ({block}/{block_limit})", percent);
         }
-
         let offset = block * u64::from(files.block_size);
+
         if let Err(error) = files.mask.read_at(&mut mask_buffer, offset) {
             eprintln!(
                 "overmask: couldn't read {} bytes from mask file at offset {offset}: {error}",

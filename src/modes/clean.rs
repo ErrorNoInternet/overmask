@@ -18,8 +18,8 @@ pub fn main(files: &Files, truncate: bool) {
             last_percent = percent;
             println!("comparing blocks: {:.1}% ({block}/{block_limit})", percent);
         }
-
         let offset = block * u64::from(files.block_size);
+
         if let Err(error) = files.overlay.read_at(&mut overlay_buffer, offset) {
             eprintln!(
                 "overmask: couldn't read {} bytes from overlay file at offset {offset}: {error}",
@@ -86,8 +86,8 @@ fn do_truncate(files: &Files) {
             last_percent = percent;
             println!("checking blocks: {:.1}% ({block}/{block_limit})", percent);
         }
-
         let offset = block * u64::from(files.block_size);
+
         if let Err(error) = files.mask.read_at(&mut mask_buffer, offset) {
             eprintln!(
                 "overmask: couldn't read {} bytes from mask file at offset {offset}: {error}",
