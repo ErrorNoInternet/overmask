@@ -3,7 +3,8 @@ use std::{fs, os::unix::fs::FileExt, path::PathBuf, process::exit};
 
 pub fn main(files: &Files, seed_file: &PathBuf, force: bool) {
     if !force {
-        println!("This is the only mode that will write data to your seed file.\nIf you are sure you want to do this, specify the --force flag.");
+        println!("This is the only mode that will write data to your seed file.");
+        println!("If you are sure you want to do this, specify the --force flag.");
         exit(2);
     }
 
@@ -57,25 +58,22 @@ pub fn main(files: &Files, seed_file: &PathBuf, force: bool) {
         for (i, (mask, overlay)) in mask_buffer.iter().zip(&overlay_buffer).enumerate() {
             if mask == &MASK {
                 if possible_start.is_none() {
-                    possible_start = Some(i)
+                    possible_start = Some(i);
                 }
                 buffer.push(*overlay);
-            } else {
-                if let Some(start) = possible_start {
-                    if let Err(error) = writeable_seed.write_all_at(&buffer, offset + start as u64)
-                    {
-                        eprintln!(
-                            "overmask: couldn't write {} bytes to seed file at offset {}: {error}",
-                            buffer.len(),
-                            offset + start as u64
-                        );
-                        if !files.ignore_errors {
-                            exit(1)
-                        }
+            } else if let Some(start) = possible_start {
+                if let Err(error) = writeable_seed.write_all_at(&buffer, offset + start as u64) {
+                    eprintln!(
+                        "overmask: couldn't write {} bytes to seed file at offset {}: {error}",
+                        buffer.len(),
+                        offset + start as u64
+                    );
+                    if !files.ignore_errors {
+                        exit(1)
                     }
-                    buffer.clear();
-                    possible_start = None;
                 }
+                buffer.clear();
+                possible_start = None;
             }
         }
         if let Some(start) = possible_start {
