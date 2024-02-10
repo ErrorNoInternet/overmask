@@ -14,13 +14,12 @@ pub fn main(files: &Files, seed_file: &PathBuf, force: bool) {
             exit(1);
         }
     };
-    let mut buffer = vec![0; files.block_size as usize];
     let mut overlay_buffer = vec![0; files.block_size as usize];
     let mut mask_buffer = vec![0; files.block_size as usize];
     let mut blocks_applied = 0;
 
     let mut last_percent = 0.0;
-    let block_limit = files.seed_size / u64::from(files.block_size);
+    let block_limit = files.mask_size / u64::from(files.block_size);
     for block in 0..block_limit {
         #[allow(clippy::cast_precision_loss)]
         let percent = block as f64 / block_limit as f64 * 100.0;
@@ -43,15 +42,6 @@ pub fn main(files: &Files, seed_file: &PathBuf, force: bool) {
             continue;
         };
 
-        if let Err(error) = files.seed.read_at(&mut buffer, offset) {
-            eprintln!(
-                "overmask: couldn't read {} bytes from seed file at offset {offset}: {error}",
-                files.block_size,
-            );
-            if !files.ignore_errors {
-                exit(1);
-            }
-        }
         if let Err(error) = files.overlay.read_at(&mut overlay_buffer, offset) {
             eprintln!(
                 "overmask: couldn't read {} bytes from overlay file at offset {offset}: {error}",
@@ -62,21 +52,45 @@ pub fn main(files: &Files, seed_file: &PathBuf, force: bool) {
             }
         }
 
-        buffer = buffer
-            .iter()
-            .zip(overlay_buffer.iter())
-            .zip(mask_buffer.iter())
-            .map(|((&seed, &overlay), &mask)| if mask == MASK { overlay } else { seed })
-            .collect();
-        if let Err(error) = writeable_seed.write_all_at(&buffer, offset) {
-            eprintln!(
-                "overmask: couldn't write {} bytes to seed file at offset {offset}: {error}",
-                files.block_size
-            );
-            if !files.ignore_errors {
-                exit(1)
+        let mut buffer = Vec::with_capacity(files.block_size as usize);
+        let mut possible_start = None;
+        for (i, (mask, overlay)) in mask_buffer.iter().zip(&overlay_buffer).enumerate() {
+            if mask == &MASK {
+                if possible_start.is_none() {
+                    possible_start = Some(i)
+                }
+                buffer.push(*overlay);
+            } else {
+                if let Some(start) = possible_start {
+                    if let Err(error) = writeable_seed.write_all_at(&buffer, offset + start as u64)
+                    {
+                        eprintln!(
+                            "overmask: couldn't write {} bytes to seed file at offset {}: {error}",
+                            buffer.len(),
+                            offset + start as u64
+                        );
+                        if !files.ignore_errors {
+                            exit(1)
+                        }
+                    }
+                    buffer.clear();
+                    possible_start = None;
+                }
             }
         }
+        if let Some(start) = possible_start {
+            if let Err(error) = writeable_seed.write_all_at(&buffer, offset + start as u64) {
+                eprintln!(
+                    "overmask: couldn't write {} bytes to seed file at offset {}: {error}",
+                    buffer.len(),
+                    offset + start as u64
+                );
+                if !files.ignore_errors {
+                    exit(1)
+                }
+            }
+        }
+
         blocks_applied += 1;
     }
     println!(
