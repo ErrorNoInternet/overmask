@@ -27,10 +27,11 @@ $ sudo modprobe nbd
 # create (empty) files to store data in
 $ touch overlay_file mask_file
 
+# device mode:
 # read from /dev/sda, but redirect all writes to overlay_file and
 # use mask_file to keep track of what has been written so that 
 # future reads would read from overlay_file instead of /dev/sda
-$ overmask dev -s /dev/sda -o overlay_file -m mask_file
+$ overmask -s /dev/sda -o overlay_file -m mask_file dev
 
 # you can now run arbitrary write commands on the virtual block device
 $ sudo dd if=/dev/zero of=/dev/nbd0
