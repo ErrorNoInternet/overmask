@@ -57,11 +57,11 @@ pub enum MainSubcommand {
         #[arg(short = 't', long, value_name = "SECONDS", default_value_t = 60)]
         nbd_timeout: u64,
 
-        /// Print every IO operation (read(), write(), flush(), etc)
+        /// Print every IO operation (`read()`, `write()`, `flush()`, etc)
         #[arg(short, long)]
         print_operations: bool,
 
-        /// Overwrite overlay and mask with zeroes on trim()
+        /// Overwrite overlay and mask with zeroes on `trim()`
         #[arg(short, long)]
         zero_trim: bool,
     },

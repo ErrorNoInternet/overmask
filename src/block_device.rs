@@ -119,22 +119,16 @@ impl BlockDevice for Virtual {
             println!("flush()");
         }
 
-        match self.files.overlay.flush() {
-            Ok(()) => (),
-            Err(error) => {
-                eprintln!("overmask: couldn't flush overlay file: {error}");
-                if !self.files.ignore_errors {
-                    return Err(error);
-                }
+        if let Err(error) = self.files.overlay.flush() {
+            eprintln!("overmask: couldn't flush overlay file: {error}");
+            if !self.files.ignore_errors {
+                return Err(error);
             }
         }
-        match self.files.mask.flush() {
-            Ok(()) => (),
-            Err(error) => {
-                eprintln!("overmask: couldn't flush mask file: {error}");
-                if !self.files.ignore_errors {
-                    return Err(error);
-                }
+        if let Err(error) = self.files.mask.flush() {
+            eprintln!("overmask: couldn't flush mask file: {error}");
+            if !self.files.ignore_errors {
+                return Err(error);
             }
         }
         Ok(())
@@ -147,26 +141,20 @@ impl BlockDevice for Virtual {
 
         if self.zero_trim {
             let zeros = vec![0; len as usize];
-            match self.files.overlay.write_all_at(&zeros, offset) {
-                Ok(()) => (),
-                Err(error) => {
-                    eprintln!(
+            if let Err(error) = self.files.overlay.write_all_at(&zeros, offset) {
+                eprintln!(
                         "overmask: couldn't write {len} zeros to overlay file at offset {offset}: {error}"
                     );
-                    if !self.files.ignore_errors {
-                        return Err(error);
-                    }
+                if !self.files.ignore_errors {
+                    return Err(error);
                 }
             };
-            match self.files.mask.write_all_at(&zeros, offset) {
-                Ok(()) => (),
-                Err(error) => {
-                    eprintln!(
-                        "overmask: couldn't write {len} zeros to mask file at offset {offset}: {error}"
-                    );
-                    if !self.files.ignore_errors {
-                        return Err(error);
-                    }
+            if let Err(error) = self.files.mask.write_all_at(&zeros, offset) {
+                eprintln!(
+                    "overmask: couldn't write {len} zeros to mask file at offset {offset}: {error}"
+                );
+                if !self.files.ignore_errors {
+                    return Err(error);
                 }
             };
         }

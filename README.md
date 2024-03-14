@@ -33,7 +33,7 @@ $ touch overlay_file mask_file
 # future reads would read from overlay_file instead of /dev/sda
 $ overmask -s /dev/sda -o overlay_file -m mask_file dev
 
-# you can now run arbitrary write commands on the virtual block device
+# you can now send arbitrary write commands to the virtual block device
 $ sudo dd if=/dev/zero of=/dev/nbd0
 # and all the zeros would be in overlay_file instead of /dev/sda
 ```
