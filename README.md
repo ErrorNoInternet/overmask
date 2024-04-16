@@ -4,11 +4,9 @@ Add a writeable overlay on top of read-only files
 
 ## Installation
 
-### Nix
+Nix flake: `github:ErrorNoInternet/overmask`
 
-```sh
-$ nix run github:ErrorNoInternet/overmask -- --help
-```
+AUR: https://aur.archlinux.org/packages/overmask
 
 ### cargo
 
@@ -30,7 +28,7 @@ $ touch overlay_file mask_file
 # device mode:
 # read from /dev/sda, but redirect all writes to overlay_file and
 # use mask_file to keep track of what has been written so that 
-# future reads would read from overlay_file instead of /dev/sda
+# future reads would be from overlay_file instead of /dev/sda
 $ overmask -s /dev/sda -o overlay_file -m mask_file dev
 
 # you can now send arbitrary write commands to the virtual block device
