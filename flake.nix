@@ -3,8 +3,16 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    flake-parts.url = "github:hercules-ci/flake-parts";
-    rust-overlay.url = "github:oxalica/rust-overlay";
+
+    flake-parts = {
+      url = "github:hercules-ci/flake-parts";
+      inputs.nixpkgs-lib.follows = "nixpkgs";
+    };
+
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = {
@@ -19,6 +27,7 @@
         "aarch64-linux"
         "x86_64-linux"
       ];
+
       perSystem = {
         system,
         pkgs,
@@ -34,7 +43,7 @@
             "rust-analyzer-preview"
           ];
         };
-      in rec {
+      in {
         _module.args.pkgs = import nixpkgs {
           inherit system;
           overlays = [rust-overlay.overlays.default];
@@ -53,26 +62,27 @@
           RUST_BACKTRACE = 1;
         };
 
-        packages.overmask = pkgs.rustPlatform.buildRustPackage {
-          pname = "overmask";
-          version =
-            if (self ? shortRev)
-            then self.shortRev
-            else self.dirtyShortRev;
+        packages = rec {
+          overmask = pkgs.rustPlatform.buildRustPackage {
+            pname = "overmask";
+            version =
+              self.shortRev
+              or self.dirtyShortRev;
 
-          cargoLock.lockFile = ./Cargo.lock;
-          src = pkgs.lib.cleanSource ./.;
+            src = pkgs.lib.cleanSource ./.;
+            cargoLock.lockFile = ./Cargo.lock;
 
-          nativeBuildInputs = with pkgs; [
-            pkg-config
-            rust
-          ];
+            nativeBuildInputs = with pkgs; [
+              pkg-config
+            ];
 
-          buildInputs = with pkgs; [
-            udev
-          ];
+            buildInputs = with pkgs; [
+              rust
+              udev
+            ];
+          };
+          default = overmask;
         };
-        packages.default = packages.overmask;
       };
     };
 }
