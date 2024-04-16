@@ -21,7 +21,7 @@ pub struct Arguments {
     #[arg(short, long, value_name = "BYTES", default_value_t = 512)]
     pub block_size: u32,
 
-    /// Ignore IO errors from the underlying storage backend
+    /// Ignore IO errors from the underlying files
     #[arg(short, long)]
     pub ignore_errors: bool,
 
