@@ -75,10 +75,10 @@
 
             nativeBuildInputs = with pkgs; [
               pkg-config
+              rust
             ];
 
             buildInputs = with pkgs; [
-              rust
               udev
             ];
           };
