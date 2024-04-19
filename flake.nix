@@ -33,16 +33,17 @@
         pkgs,
         ...
       }: let
-        rust = pkgs.rust-bin.nightly.latest.default.override {
-          targets = [
-            "x86_64-unknown-linux-gnu"
-            "x86_64-unknown-linux-musl"
-          ];
-          extensions = [
-            "rust-src"
-            "rust-analyzer-preview"
-          ];
-        };
+        rust = pkgs.rust-bin.selectLatestNightlyWith (toolchain:
+          toolchain.default.override {
+            targets = [
+              "x86_64-unknown-linux-gnu"
+              "x86_64-unknown-linux-musl"
+            ];
+            extensions = [
+              "rust-src"
+              "rust-analyzer-preview"
+            ];
+          });
       in {
         _module.args.pkgs = import nixpkgs {
           inherit system;
