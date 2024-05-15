@@ -1,8 +1,9 @@
 use crate::{Files, MASK};
+use nix::fcntl::{fallocate, FallocateFlags};
 use std::{
     fs,
     io::{self, Write},
-    os::unix::fs::FileExt,
+    os::{fd::AsRawFd, unix::fs::FileExt},
     path::PathBuf,
     process::exit,
 };
@@ -11,7 +12,7 @@ use vblk::BlockDevice;
 pub struct Virtual {
     pub files: Files,
     pub print_operations: bool,
-    pub zero_trim: bool,
+    pub trim_no_punch_holes: bool,
 }
 
 impl BlockDevice for Virtual {
@@ -139,24 +140,24 @@ impl BlockDevice for Virtual {
             println!("trim(offset={offset} len={len})");
         }
 
-        if self.zero_trim {
-            let zeros = vec![0; len as usize];
-            if let Err(error) = self.files.overlay.write_all_at(&zeros, offset) {
-                eprintln!(
-                        "overmask: couldn't write {len} zeros to overlay file at offset {offset}: {error}"
-                    );
-                if !self.files.ignore_errors {
-                    return Err(error);
-                }
-            };
-            if let Err(error) = self.files.mask.write_all_at(&zeros, offset) {
-                eprintln!(
-                    "overmask: couldn't write {len} zeros to mask file at offset {offset}: {error}"
-                );
-                if !self.files.ignore_errors {
-                    return Err(error);
-                }
-            };
+        if !self.trim_no_punch_holes {
+            let flags = FallocateFlags::FALLOC_FL_KEEP_SIZE | FallocateFlags::FALLOC_FL_PUNCH_HOLE;
+            if let Err(error) = fallocate(
+                self.files.mask.as_raw_fd(),
+                flags,
+                offset.try_into().unwrap(),
+                len.into(),
+            ) {
+                eprint!("overmask: couldn't punch hole of size {len} in mask file at offset {offset}: {error}");
+            }
+            if let Err(error) = fallocate(
+                self.files.overlay.as_raw_fd(),
+                flags,
+                offset.try_into().unwrap(),
+                len.into(),
+            ) {
+                eprint!("overmask: couldn't punch hole of size {len} in overlay file at offset {offset}: {error}");
+            }
         }
         Ok(())
     }

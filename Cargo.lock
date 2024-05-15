@@ -275,6 +275,7 @@ dependencies = [
  "block-utils",
  "clap",
  "ctrlc",
+ "nix 0.16.1",
  "vblk",
 ]
 

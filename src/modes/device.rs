@@ -7,12 +7,12 @@ pub fn main(
     nbd_device: &PathBuf,
     nbd_timeout: u64,
     print_operations: bool,
-    zero_trim: bool,
+    trim_no_punch_holes: bool,
 ) {
     let mut virtual_block_device = Virtual {
         files,
         print_operations,
-        zero_trim,
+        trim_no_punch_holes,
     };
     unsafe {
         if let Err(error) = mount(&mut virtual_block_device, nbd_device, |device| {

@@ -24,4 +24,5 @@ rustflags = ["-Zshare-generics", "-Zthreads=0"]
 block-utils = "0"
 clap = { version = "4", features = ["derive"] }
 ctrlc = "3"
+nix = "0"
 vblk = "0"

@@ -77,7 +77,13 @@ fn main() {
             nbd_device,
             nbd_timeout,
             print_operations,
-            zero_trim,
-        } => modes::device::main(files, &nbd_device, nbd_timeout, print_operations, zero_trim),
+            trim_no_punch_holes,
+        } => modes::device::main(
+            files,
+            &nbd_device,
+            nbd_timeout,
+            print_operations,
+            trim_no_punch_holes,
+        ),
     };
 }

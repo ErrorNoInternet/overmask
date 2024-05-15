@@ -61,8 +61,8 @@ pub enum MainSubcommand {
         #[arg(short, long)]
         print_operations: bool,
 
-        /// Overwrite overlay and mask with zeroes on `trim()`
-        #[arg(short, long)]
-        zero_trim: bool,
+        /// Don't punch holes (fallocate) in overlay and mask on `trim()`
+        #[arg(short = 'T', long)]
+        trim_no_punch_holes: bool,
     },
 }
