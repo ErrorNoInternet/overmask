@@ -21,7 +21,7 @@ opt-level = "z"
 rustflags = ["-Zshare-generics", "-Zthreads=0"]
 
 [dependencies]
-block-utils = "0.11"
+block-utils = "0"
 clap = { version = "4", features = ["derive"] }
 ctrlc = "3"
-vblk = "0.1"
+vblk = "0"
