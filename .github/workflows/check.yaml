@@ -23,7 +23,7 @@ jobs:
             log-lines = 500
 
       - name: Set up Magic Nix Cache
-        uses: DeterminateSystems/magic-nix-cache-action@v6
+        uses: DeterminateSystems/magic-nix-cache-action@v7
 
       - name: Check Nix flake inputs
         uses: DeterminateSystems/flake-checker-action@v7
