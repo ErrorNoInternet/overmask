@@ -16,7 +16,7 @@ pub fn main(files: &Files, truncate: bool) {
         let percent = block as f64 / block_limit as f64 * 100.0;
         if percent - last_percent > 0.1 {
             last_percent = percent;
-            println!("comparing blocks: {:.1}% ({block}/{block_limit})", percent);
+            println!("comparing blocks: {percent:.1}% ({block}/{block_limit})");
         }
         let offset = block * u64::from(files.block_size);
 
@@ -84,7 +84,7 @@ fn do_truncate(files: &Files) {
         let percent = 100.0 - block as f64 / block_limit as f64 * 100.0;
         if percent - last_percent > 0.1 {
             last_percent = percent;
-            println!("checking blocks: {:.1}% ({block}/{block_limit})", percent);
+            println!("checking blocks: {percent:.1}% ({block}/{block_limit})");
         }
         let offset = block * u64::from(files.block_size);
 
