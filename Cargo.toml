@@ -1,5 +1,3 @@
-cargo-features = ["profile-rustflags", "trim-paths"]
-
 [package]
 name = "overmask"
 version = "0.1.0"
@@ -9,16 +7,11 @@ edition = "2021"
 codegen-units = 1
 lto = true
 panic = "abort"
-rustflags = ["-Zlocation-detail=none"]
 strip = true
-trim-paths = true
 
 [profile.small]
 inherits = "release"
 opt-level = "z"
-
-[profile.dev]
-rustflags = ["-Zshare-generics", "-Zthreads=0"]
 
 [dependencies]
 block-utils = "0"
