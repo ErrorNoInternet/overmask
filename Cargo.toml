@@ -2,6 +2,7 @@
 name = "overmask"
 version = "0.1.0"
 edition = "2021"
+build = "build.rs"
 
 [profile.release]
 codegen-units = 1
@@ -16,6 +17,11 @@ opt-level = "z"
 [dependencies]
 block-utils = "0"
 clap = { version = "4", features = ["derive"] }
+clap_complete = "4"
 ctrlc = "3"
 nix = "0"
 vblk = "0"
+
+[build-dependencies]
+clap = { version = "4", features = ["derive"] }
+clap_complete = "4"
