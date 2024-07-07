@@ -148,7 +148,7 @@ impl BlockDevice for Virtual {
                 offset.try_into().unwrap(),
                 len.into(),
             ) {
-                eprint!("overmask: couldn't punch hole of size {len} in mask file at offset {offset}: {error}");
+                eprintln!("overmask: couldn't punch hole of size {len} in mask file at offset {offset}: {error}");
             }
             if let Err(error) = fallocate(
                 self.files.overlay.as_raw_fd(),
@@ -156,7 +156,7 @@ impl BlockDevice for Virtual {
                 offset.try_into().unwrap(),
                 len.into(),
             ) {
-                eprint!("overmask: couldn't punch hole of size {len} in overlay file at offset {offset}: {error}");
+                eprintln!("overmask: couldn't punch hole of size {len} in overlay file at offset {offset}: {error}");
             }
         }
         Ok(())
