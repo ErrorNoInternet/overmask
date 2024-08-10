@@ -8,6 +8,8 @@ Nix flake: `github:ErrorNoInternet/overmask`
 
 AUR: https://aur.archlinux.org/packages/overmask
 
+COPR: https://copr.fedorainfracloud.org/coprs/errornointernet/packages
+
 ### cargo
 
 ```sh
