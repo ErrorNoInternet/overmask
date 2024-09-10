@@ -26,7 +26,7 @@ jobs:
             log-lines = 500
 
       - name: Set up Magic Nix Cache
-        uses: DeterminateSystems/magic-nix-cache-action@v7
+        uses: DeterminateSystems/magic-nix-cache-action@v8
 
       - name: Compile for ${{ matrix.target }}
         run: nix develop -c cargo b -r --target ${{ matrix.target }}
