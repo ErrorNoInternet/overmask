@@ -79,7 +79,7 @@ impl BlockDevice for Virtual {
                 .zip(mask_buffer.iter())
                 .map(|((&seed, &overlay), &mask)| if mask == MASK { overlay } else { seed })
                 .collect();
-        };
+        }
 
         bytes.copy_from_slice(&buffer[..]);
         Ok(())
@@ -111,7 +111,7 @@ impl BlockDevice for Virtual {
             if !self.files.ignore_errors {
                 return Err(error);
             }
-        };
+        }
         Ok(())
     }
 

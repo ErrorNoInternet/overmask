@@ -85,5 +85,5 @@ fn main() {
             print_operations,
             trim_no_punch_holes,
         ),
-    };
+    }
 }

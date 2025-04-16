@@ -25,7 +25,7 @@ pub fn main(
                 eprintln!(
                     "overmask: couldn't set virtual block device timeout to {nbd_timeout} seconds: {error}",
                 );
-            };
+            }
 
             if let Err(error) = ctrlc::set_handler(move || {
                 if let Err(error) = device.unmount() {
@@ -33,7 +33,7 @@ pub fn main(
                 }
             }) {
                 eprintln!("overmask: couldn't add ctrlc handler: {error}");
-            };
+            }
 
             Ok(())
         }) {

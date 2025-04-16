@@ -41,7 +41,7 @@ pub fn main(files: &Files, seed_file: &PathBuf, force: bool) {
         }
         if mask_buffer.iter().all(|&byte| byte == 0) {
             continue;
-        };
+        }
 
         if let Err(error) = files.overlay.read_at(&mut overlay_buffer, offset) {
             eprintln!(

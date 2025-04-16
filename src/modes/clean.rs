@@ -48,7 +48,7 @@ pub fn main(files: &Files, truncate: bool) {
                 if !files.ignore_errors {
                     exit(1);
                 }
-            };
+            }
             if let Err(error) = files.overlay.write_all_at(&zeros, offset) {
                 eprintln!(
                     "overmask: couldn't write {} bytes to overlay file at offset {offset}: {error}",
@@ -57,7 +57,7 @@ pub fn main(files: &Files, truncate: bool) {
                 if !files.ignore_errors {
                     exit(1);
                 }
-            };
+            }
             blocks_freed += 1;
         }
     }
@@ -68,7 +68,7 @@ pub fn main(files: &Files, truncate: bool) {
 
     if truncate {
         do_truncate(files);
-    };
+    }
 }
 
 fn do_truncate(files: &Files) {
@@ -107,11 +107,11 @@ fn do_truncate(files: &Files) {
         if let Err(error) = files.mask.set_len(offset) {
             eprintln!("overmask: couldn't truncate mask file to {offset} bytes: {error}");
             exit(1);
-        };
+        }
         if let Err(error) = files.overlay.set_len(offset) {
             eprintln!("overmask: couldn't truncate overlay file to {offset} bytes: {error}");
             exit(1);
-        };
+        }
         println!("successfully truncated overlay and mask files to {offset} bytes");
     } else {
         println!("no unused block found");
