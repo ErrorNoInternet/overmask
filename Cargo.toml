@@ -20,7 +20,7 @@ block-utils = "0"
 clap = { version = "4", features = ["derive"] }
 clap_complete = "4"
 ctrlc = "3"
-nix = "0"
+nix = { version = "0", features = ["fs"] }
 vblk = "0"
 
 [build-dependencies]
