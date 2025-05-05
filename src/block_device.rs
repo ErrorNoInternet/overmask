@@ -3,7 +3,7 @@ use nix::fcntl::{fallocate, FallocateFlags};
 use std::{
     fs,
     io::{self, Write},
-    os::{fd::AsRawFd, unix::fs::FileExt},
+    os::unix::fs::FileExt,
     path::PathBuf,
     process::exit,
 };
@@ -143,7 +143,7 @@ impl BlockDevice for Virtual {
         if !self.trim_no_punch_holes {
             let flags = FallocateFlags::FALLOC_FL_KEEP_SIZE | FallocateFlags::FALLOC_FL_PUNCH_HOLE;
             if let Err(error) = fallocate(
-                self.files.mask.as_raw_fd(),
+                &self.files.mask,
                 flags,
                 offset.try_into().unwrap(),
                 len.into(),
@@ -151,7 +151,7 @@ impl BlockDevice for Virtual {
                 eprintln!("overmask: couldn't punch hole of size {len} in mask file at offset {offset}: {error}");
             }
             if let Err(error) = fallocate(
-                self.files.overlay.as_raw_fd(),
+                &self.files.overlay,
                 flags,
                 offset.try_into().unwrap(),
                 len.into(),
