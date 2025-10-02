@@ -31,7 +31,7 @@ jobs:
           sudo apt install -y qemu-user-static
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v19
+        uses: DeterminateSystems/nix-installer-action@v20
         with:
           extra-conf: |
             log-lines = 500
