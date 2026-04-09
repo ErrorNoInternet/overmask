@@ -6,6 +6,11 @@ updates:
     schedule:
       interval: "monthly"
 
+  - package-ecosystem: "nix"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+
   - package-ecosystem: "github-actions"
     directory: ".github/workflows"
     schedule:
