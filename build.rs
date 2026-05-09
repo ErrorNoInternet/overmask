@@ -2,7 +2,7 @@
 mod arguments;
 
 use clap::CommandFactory;
-use clap_complete::{generate_to, Shell};
+use clap_complete::{Shell, generate_to};
 use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>> {

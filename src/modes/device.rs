@@ -1,4 +1,4 @@
-use crate::{block_device::Virtual, Files};
+use crate::{Files, block_device::Virtual};
 use std::path::PathBuf;
 use vblk::mount;
 

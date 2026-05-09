@@ -76,16 +76,16 @@ pub fn main(files: &Files, seed_file: &PathBuf, force: bool) {
                 possible_start = None;
             }
         }
-        if let Some(start) = possible_start {
-            if let Err(error) = writeable_seed.write_all_at(&buffer, offset + start as u64) {
-                eprintln!(
-                    "overmask: couldn't write {} bytes to seed file at offset {}: {error}",
-                    buffer.len(),
-                    offset + start as u64
-                );
-                if !files.ignore_errors {
-                    exit(1)
-                }
+        if let Some(start) = possible_start
+            && let Err(error) = writeable_seed.write_all_at(&buffer, offset + start as u64)
+        {
+            eprintln!(
+                "overmask: couldn't write {} bytes to seed file at offset {}: {error}",
+                buffer.len(),
+                offset + start as u64
+            );
+            if !files.ignore_errors {
+                exit(1)
             }
         }
 

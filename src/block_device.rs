@@ -1,5 +1,5 @@
 use crate::{Files, MASK};
-use nix::fcntl::{fallocate, FallocateFlags};
+use nix::fcntl::{FallocateFlags, fallocate};
 use std::{
     fs,
     io::{self, Write},
@@ -148,7 +148,9 @@ impl BlockDevice for Virtual {
                 offset.try_into().unwrap(),
                 len.into(),
             ) {
-                eprintln!("overmask: couldn't punch hole of size {len} in mask file at offset {offset}: {error}");
+                eprintln!(
+                    "overmask: couldn't punch hole of size {len} in mask file at offset {offset}: {error}"
+                );
             }
             if let Err(error) = fallocate(
                 &self.files.overlay,
@@ -156,7 +158,9 @@ impl BlockDevice for Virtual {
                 offset.try_into().unwrap(),
                 len.into(),
             ) {
-                eprintln!("overmask: couldn't punch hole of size {len} in overlay file at offset {offset}: {error}");
+                eprintln!(
+                    "overmask: couldn't punch hole of size {len} in overlay file at offset {offset}: {error}"
+                );
             }
         }
         Ok(())
