@@ -87,7 +87,7 @@ jobs:
         uses: DeterminateSystems/magic-nix-cache-action@v13
 
       - name: Check formatting
-        run: nix run nixpkgs#alejandra -- -c .
+        run: nix fmt -- -c .
 
       - name: Run static code analysis
         if: always()

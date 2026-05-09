@@ -51,6 +51,8 @@
             default = overmask;
             overmask = pkgs.callPackage ./. { inherit craneLib; };
           };
+
+          formatter = pkgs.nixfmt;
         };
     };
 
