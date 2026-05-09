@@ -1,89 +1,65 @@
 {
-  description = "overmask - Add a writeable overlay on top of read-only files";
-
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    crane.url = "github:ipetkov/crane";
 
-    flake-parts = {
-      url = "github:hercules-ci/flake-parts";
-      inputs.nixpkgs-lib.follows = "nixpkgs";
-    };
-
-    rust-overlay = {
-      url = "github:oxalica/rust-overlay";
+    fenix = {
+      url = "github:nix-community/fenix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    flake-parts.url = "github:hercules-ci/flake-parts";
+
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   };
 
-  outputs = {
-    flake-parts,
-    nixpkgs,
-    rust-overlay,
-    self,
-    ...
-  } @ inputs:
-    flake-parts.lib.mkFlake {inherit inputs;} {
+  outputs =
+    {
+      crane,
+      fenix,
+      flake-parts,
+      ...
+    }@inputs:
+    flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [
         "aarch64-linux"
         "x86_64-linux"
       ];
 
-      perSystem = {
-        system,
-        pkgs,
-        ...
-      }: let
-        rust = pkgs.rust-bin.selectLatestNightlyWith (toolchain:
-          toolchain.default.override {
-            targets = [
-              "x86_64-unknown-linux-gnu"
-              "x86_64-unknown-linux-musl"
-            ];
-            extensions = [
-              "rust-src"
-              "rust-analyzer-preview"
-            ];
-          });
-      in {
-        _module.args.pkgs = import nixpkgs {
-          inherit system;
-          overlays = [rust-overlay.overlays.default];
-        };
+      perSystem =
+        {
+          pkgs,
+          self',
+          system,
+          ...
+        }:
+        let
+          craneLib = (crane.mkLib pkgs).overrideToolchain fenix.packages.${system}.complete.toolchain;
+        in
+        {
+          devShells.default = pkgs.mkShell {
+            name = "overmask";
 
-        devShells.default = pkgs.mkShell {
-          name = "overmask";
-
-          buildInputs = with pkgs; [
-            pkg-config
-            rust
-            taplo
-            udev
-          ];
-
-          RUST_BACKTRACE = 1;
-        };
-
-        packages = rec {
-          overmask = pkgs.rustPlatform.buildRustPackage {
-            pname = "overmask";
-            version =
-              self.shortRev
-              or self.dirtyShortRev;
-
-            src = pkgs.lib.cleanSource ./.;
-            cargoLock.lockFile = ./Cargo.lock;
-
-            nativeBuildInputs = with pkgs; [
-              pkg-config
-              rust
-            ];
-
+            inputsFrom = [ self'.packages.default ];
             buildInputs = with pkgs; [
-              udev
+              taplo
             ];
+
+            RUST_BACKTRACE = 1;
           };
-          default = overmask;
+
+          packages = rec {
+            default = overmask;
+            overmask = pkgs.callPackage ./. { inherit craneLib; };
+          };
         };
-      };
     };
+
+  nixConfig = {
+    extra-substituters = [ "https://errornobinaries.cachix.org" ];
+    extra-trusted-public-keys = [
+      "errornobinaries.cachix.org-1:84oagGNCIsXxBTYmfTiP+lvWje7lIS294iqAtCpFsbU="
+    ];
+  };
+
+  description = "Add a writeable overlay on top of read-only files";
 }
